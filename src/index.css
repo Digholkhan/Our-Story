@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #FAF7F2;
+    color: #2D2424;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(245, 235, 224, 0.6) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(240, 220, 210, 0.4) 0px, transparent 50%),
+      radial-gradient(at 50% 50%, rgba(250, 247, 242, 1) 0px, transparent 100%);
+    background-attachment: fixed;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF7F2;
+}
+::-webkit-scrollbar-thumb {
+  background: #D5C2B4;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B89F8E;
+}
+
+/* Luxury Glass & Card Classes */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(220, 208, 198, 0.5);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(225, 215, 205, 0.7);
+  box-shadow: 0 10px 30px -5px rgba(60, 40, 30, 0.05);
+}
+
+.glass-panel-gold {
+  background: rgba(255, 253, 249, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 15px 40px -10px rgba(180, 130, 80, 0.12);
+}
+
+.glass-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(230, 220, 210, 0.8);
+  box-shadow: 0 4px 20px -2px rgba(80, 50, 40, 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(200, 140, 120, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -4px rgba(80, 50, 40, 0.08);
+}
+
+/* Text Gradients */
+.gold-gradient-text {
+  background: linear-gradient(135deg, #4A3525 0%, #8C6239 50%, #B8860B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.rose-gradient-text {
+  background: linear-gradient(135deg, #7A2E3B 0%, #B84A5D 50%, #D46A7E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.shadow-glow-rose {
+  box-shadow: 0 8px 25px rgba(184, 74, 93, 0.2);
+}
+
+.shadow-glow-gold {
+  box-shadow: 0 8px 25px rgba(184, 134, 11, 0.18);
+}
+
+.shadow-romantic {
+  box-shadow: 0 20px 40px -15px rgba(100, 60, 50, 0.08);
+}
+
+/* Fade in smooth keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
