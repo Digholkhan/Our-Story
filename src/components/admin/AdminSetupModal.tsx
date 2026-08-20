@@ -68,26 +68,36 @@ export const AdminSetupModal: React.FC<AdminSetupModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl max-w-2xl w-full border border-stone-200/90 space-y-6 my-8 animate-scaleIn shadow-2xl bg-white text-stone-800">
-        <div className="flex items-center justify-between border-b border-stone-100 pb-4">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs overflow-y-auto">
+      {/* Scroll container — natural document flow so modal can exceed viewport height */}
+      <div className="min-h-full flex items-start justify-center px-4 py-8 sm:py-12">
+      <div className="w-full max-w-2xl rounded-3xl border border-stone-200/90 shadow-2xl bg-white text-stone-800 overflow-hidden">
+        {/* Sticky header */}
+        <div className="sticky top-0 z-10 bg-white border-b border-stone-100 px-6 sm:px-8 pt-6 pb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-rose-600" />
+            <Shield className="w-5 h-5 text-rose-600 shrink-0" />
             <div>
-              <h3 className="font-serif text-2xl font-bold text-stone-900">
+              <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 leading-tight">
                 Wedding Gift Setup ⚙️
               </h3>
-              <p className="text-xs text-stone-500">
-                Configure couple names, photos, and dates before giving the website as a gift.
+              <p className="text-xs text-stone-500 mt-0.5">
+                Configure couple names, photos, and dates.
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-stone-100 text-stone-400">
-            <X className="w-6 h-6" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-700 transition-colors shrink-0 ml-2"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-5 text-stone-800">
+        {/* Scrollable body */}
+        <div className="px-6 sm:px-8 pb-6 sm:pb-8">
+
+        <form onSubmit={handleSave} className="space-y-5 text-stone-800 pt-5">
           {/* Partner Names */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -324,6 +334,8 @@ export const AdminSetupModal: React.FC<AdminSetupModalProps> = ({
             </div>
           </div>
         </form>
+        </div>
+      </div>
       </div>
     </div>
   );

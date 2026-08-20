@@ -1,339 +1,406 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, Music, Play, Pause, Sparkles, SkipForward, SkipBack, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Volume2, Music, Play, Pause, SkipForward, SkipBack, Check } from 'lucide-react';
 
-interface Track {
+// ─── Track Definitions ────────────────────────────────────────────────────────
+// Each track has a sequence of { note frequencies } played in order, with
+// distinct timbre settings so each track sounds clearly different.
+interface TrackDef {
   id: string;
   name: string;
-  artist: string;
-  chords: number[][];
-  tempo: number;
-  type: OscillatorType;
+  label: string; // Short display name
+  // Sequence of chords: each chord is an array of Hz values played simultaneously
+  sequence: number[][];
+  // ms per chord step
+  stepMs: number;
+  // Oscillator type for harmonics
+  oscType: OscillatorType;
+  // Extra octave-down bass note on root?
+  hasBass: boolean;
 }
 
-const TRACKS: Track[] = [
+const TRACKS: TrackDef[] = [
   {
     id: 't1',
-    name: 'Canon in D (Gentle Piano Romance)',
-    artist: 'Johann Pachelbel (Acoustic Piano)',
-    chords: [
-      [293.66, 369.99, 440.00, 587.33], // D maj
-      [220.00, 277.18, 329.63, 440.00], // A maj
-      [246.94, 293.66, 369.99, 493.88], // Bm
-      [185.00, 220.00, 277.18, 369.99], // F#m
-      [196.00, 246.94, 293.66, 392.00], // G maj
-      [146.83, 220.00, 293.66, 440.00], // D/F#
-      [196.00, 246.94, 293.66, 392.00], // G maj
-      [220.00, 277.18, 329.63, 440.00], // A maj
+    name: 'Canon in D — Gentle Piano',
+    label: '🎹 Canon in D',
+    sequence: [
+      [293.66, 369.99, 440.00],  // D
+      [220.00, 277.18, 329.63],  // A
+      [246.94, 293.66, 369.99],  // Bm
+      [185.00, 220.00, 277.18],  // F#m
+      [196.00, 246.94, 293.66],  // G
+      [146.83, 196.00, 246.94],  // D/F#
+      [196.00, 246.94, 293.66],  // G
+      [220.00, 277.18, 329.63],  // A
     ],
-    tempo: 3000,
-    type: 'triangle',
+    stepMs: 2800,
+    oscType: 'triangle',
+    hasBass: true,
   },
   {
     id: 't2',
-    name: 'A Thousand Years (Acoustic Strings)',
-    artist: 'Romantic Strings Ensemble',
-    chords: [
-      [261.63, 329.63, 392.00, 523.25], // C
-      [220.00, 261.63, 329.63, 440.00], // Am
-      [174.61, 220.00, 261.63, 349.23], // F
-      [196.00, 246.94, 293.66, 392.00], // G
+    name: 'A Thousand Years — Strings',
+    label: '🎻 A Thousand Years',
+    sequence: [
+      [261.63, 329.63, 392.00],  // C
+      [220.00, 261.63, 329.63],  // Am
+      [174.61, 220.00, 261.63],  // F
+      [196.00, 246.94, 293.66],  // G
+      [261.63, 329.63, 392.00],  // C
+      [220.00, 261.63, 329.63],  // Am
+      [174.61, 220.00, 261.63],  // F
+      [246.94, 293.66, 369.99],  // Bm
     ],
-    tempo: 3400,
-    type: 'sine',
+    stepMs: 3200,
+    oscType: 'sine',
+    hasBass: true,
   },
   {
     id: 't3',
-    name: 'Golden Sunset Waltz (Ethereal Chords)',
-    artist: 'Sunset Serenade Harmony',
-    chords: [
-      [329.63, 392.00, 493.88, 587.33], // Em7
-      [220.00, 261.63, 329.63, 440.00], // Am7
-      [293.66, 369.99, 440.00, 587.33], // D7
-      [196.00, 246.94, 293.66, 392.00], // Gmaj7
+    name: 'Golden Sunset Waltz — Ethereal',
+    label: '🌙 Golden Sunset Waltz',
+    sequence: [
+      [329.63, 415.30, 493.88],  // Em
+      [293.66, 369.99, 440.00],  // D
+      [246.94, 311.13, 369.99],  // B7
+      [220.00, 277.18, 329.63],  // Am
+      [196.00, 246.94, 293.66],  // G
+      [174.61, 220.00, 261.63],  // F
+      [196.00, 246.94, 293.66],  // G
+      [220.00, 293.66, 329.63],  // Am/C
     ],
-    tempo: 3200,
-    type: 'sine',
+    stepMs: 3000,
+    oscType: 'sine',
+    hasBass: false,
   },
   {
     id: 't4',
-    name: 'Forever & Always (Warm Lofi Ambience)',
-    artist: 'Cozy Wedding Lofi Strings',
-    chords: [
-      [174.61, 220.00, 261.63, 329.63], // Fmaj7
-      [196.00, 246.94, 293.66, 349.23], // G7
-      [220.00, 261.63, 329.63, 392.00], // Am7
-      [261.63, 329.63, 392.00, 493.88], // Cmaj7
+    name: 'Forever & Always — Lofi',
+    label: '✨ Forever & Always',
+    sequence: [
+      [174.61, 220.00, 261.63],  // Fm
+      [196.00, 246.94, 293.66],  // Gm
+      [220.00, 261.63, 329.63],  // Am
+      [261.63, 329.63, 392.00],  // C
+      [174.61, 220.00, 261.63],  // Fm
+      [155.56, 196.00, 246.94],  // Eb
+      [174.61, 220.00, 261.63],  // Fm
+      [130.81, 164.81, 196.00],  // C/E (low)
     ],
-    tempo: 3600,
-    type: 'triangle',
+    stepMs: 3600,
+    oscType: 'triangle',
+    hasBass: true,
   },
 ];
 
+// ─── Component ────────────────────────────────────────────────────────────────
 export const AmbientAudioPlayer: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [trackIndex, setTrackIndex] = useState(0);
-  const [volume, setVolume] = useState(0.5);
-  const [showControls, setShowControls] = useState(false);
+  const [trackIdx, setTrackIdx] = useState(0);
+  const [volume, setVolume] = useState(0.45);
+  const [showPanel, setShowPanel] = useState(false);
 
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const intervalRef = useRef<number | null>(null);
-  const chordIdxRef = useRef(0);
-  const currentVolumeRef = useRef(volume);
+  // Refs that survive re-renders without causing them
+  const ctxRef = useRef<AudioContext | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
+  const schedulerTimerRef = useRef<number | null>(null);
+  const stepRef = useRef(0);
+  const isPlayingRef = useRef(false);
+  const trackIdxRef = useRef(trackIdx);
+  const volumeRef = useRef(volume);
 
+  // Keep refs in sync
+  useEffect(() => { trackIdxRef.current = trackIdx; }, [trackIdx]);
   useEffect(() => {
-    currentVolumeRef.current = volume;
+    volumeRef.current = volume;
+    if (masterGainRef.current && ctxRef.current) {
+      masterGainRef.current.gain.setTargetAtTime(volume * 0.12, ctxRef.current.currentTime, 0.1);
+    }
   }, [volume]);
 
-  const currentTrack = TRACKS[trackIndex];
-
-  const stopMusic = () => {
-    if (intervalRef.current !== null) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  };
-
-  const getAudioContext = () => {
-    const AudioContextClass =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
-      audioCtxRef.current = new AudioContextClass();
-    }
-    if (audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume();
-    }
-    return audioCtxRef.current;
-  };
-
-  const playChordNote = (track: Track) => {
+  // ── Get or create AudioContext + master gain ──────────────────────────────
+  const ensureCtx = useCallback((): AudioContext | null => {
     try {
-      const ctx = getAudioContext();
-      if (!ctx) return;
-
-      const chord = track.chords[chordIdxRef.current % track.chords.length];
-      chordIdxRef.current++;
-
-      chord.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.type = i === 0 ? 'sine' : track.type;
-        osc.frequency.setValueAtTime(freq, ctx.currentTime);
-
-        const noteStart = ctx.currentTime + i * 0.18;
-        const noteDuration = 3.6;
-
-        gain.gain.setValueAtTime(0.0001, noteStart);
-        gain.gain.exponentialRampToValueAtTime(
-          Math.max(0.001, 0.05 * currentVolumeRef.current),
-          noteStart + 0.5
-        );
-        gain.gain.exponentialRampToValueAtTime(0.00001, noteStart + noteDuration);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.start(noteStart);
-        osc.stop(noteStart + noteDuration + 0.2);
-      });
-    } catch (e) {
-      console.error('Audio play note error:', e);
-    }
-  };
-
-  const startTrack = (track: Track) => {
-    stopMusic();
-    chordIdxRef.current = 0;
-    getAudioContext();
-
-    // Play initial chord immediately
-    playChordNote(track);
-
-    // Schedule next chords
-    intervalRef.current = window.setInterval(() => {
-      playChordNote(track);
-    }, track.tempo);
-  };
-
-  const selectTrack = (idx: number) => {
-    setTrackIndex(idx);
-    const newTrack = TRACKS[idx];
-    startTrack(newTrack);
-    setIsPlaying(true);
-  };
-
-  const togglePlay = () => {
-    if (isPlaying) {
-      stopMusic();
-      setIsPlaying(false);
-    } else {
-      startTrack(currentTrack);
-      setIsPlaying(true);
-    }
-  };
-
-  const nextTrack = () => {
-    const nextIdx = (trackIndex + 1) % TRACKS.length;
-    selectTrack(nextIdx);
-  };
-
-  const prevTrack = () => {
-    const prevIdx = (trackIndex - 1 + TRACKS.length) % TRACKS.length;
-    selectTrack(prevIdx);
-  };
-
-  useEffect(() => {
-    return () => {
-      stopMusic();
-      if (audioCtxRef.current && audioCtxRef.current.state === 'running') {
-        audioCtxRef.current.close().catch(() => {});
+      const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!ctxRef.current || ctxRef.current.state === 'closed') {
+        ctxRef.current = new AC();
+        // Master gain node
+        const mg = ctxRef.current.createGain();
+        mg.gain.value = volumeRef.current * 0.12;
+        mg.connect(ctxRef.current.destination);
+        masterGainRef.current = mg;
       }
-    };
+      if (ctxRef.current.state === 'suspended') {
+        ctxRef.current.resume();
+      }
+      return ctxRef.current;
+    } catch {
+      return null;
+    }
   }, []);
 
+  // ── Play a single chord at a specific AudioContext time ───────────────────
+  const scheduleChord = useCallback((ctx: AudioContext, master: GainNode, track: TrackDef, step: number) => {
+    const chord = track.sequence[step % track.sequence.length];
+    const now = ctx.currentTime;
+    const dur = (track.stepMs / 1000) * 0.85; // slightly shorter than step for breathing room
+
+    // Optional bass note (root an octave down)
+    const notes = track.hasBass ? [chord[0] / 2, ...chord] : chord;
+
+    notes.forEach((freq, i) => {
+      const isBass = track.hasBass && i === 0;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = isBass ? 'sine' : track.oscType;
+      osc.frequency.value = freq;
+
+      // Soft attack, long sustain, soft release
+      const peakVol = isBass ? 0.35 : (i === 0 ? 0.7 : 0.4);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(peakVol, now + 0.4);
+      gain.gain.setValueAtTime(peakVol, now + dur - 0.5);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+      osc.connect(gain);
+      gain.connect(master);
+
+      osc.start(now);
+      osc.stop(now + dur + 0.05);
+    });
+  }, []);
+
+  // ── Stop the scheduling loop ──────────────────────────────────────────────
+  const stopScheduler = useCallback(() => {
+    if (schedulerTimerRef.current !== null) {
+      clearTimeout(schedulerTimerRef.current);
+      schedulerTimerRef.current = null;
+    }
+  }, []);
+
+  // ── Recursive scheduling loop (more accurate than setInterval) ────────────
+  const runScheduler = useCallback(() => {
+    if (!isPlayingRef.current) return;
+
+    const ctx = ensureCtx();
+    if (!ctx || !masterGainRef.current) return;
+
+    const track = TRACKS[trackIdxRef.current];
+    scheduleChord(ctx, masterGainRef.current, track, stepRef.current);
+    stepRef.current++;
+
+    // Schedule next step
+    schedulerTimerRef.current = window.setTimeout(runScheduler, track.stepMs);
+  }, [ensureCtx, scheduleChord]);
+
+  // ── Start playing a specific track ───────────────────────────────────────
+  const startTrack = useCallback((idx: number) => {
+    stopScheduler();
+    stepRef.current = 0;
+    trackIdxRef.current = idx;
+    isPlayingRef.current = true;
+
+    const ctx = ensureCtx();
+    if (!ctx) return;
+
+    // Small delay to let AudioContext warm up
+    schedulerTimerRef.current = window.setTimeout(runScheduler, 50);
+  }, [stopScheduler, ensureCtx, runScheduler]);
+
+  // ── Toggle play/pause ─────────────────────────────────────────────────────
+  const togglePlay = useCallback(() => {
+    if (isPlayingRef.current) {
+      stopScheduler();
+      isPlayingRef.current = false;
+      setIsPlaying(false);
+    } else {
+      startTrack(trackIdxRef.current);
+      setIsPlaying(true);
+    }
+  }, [stopScheduler, startTrack]);
+
+  // ── Select a track from the list ─────────────────────────────────────────
+  const selectTrack = useCallback((idx: number) => {
+    setTrackIdx(idx);
+    startTrack(idx);
+    setIsPlaying(true);
+  }, [startTrack]);
+
+  const nextTrack = useCallback(() => {
+    const next = (trackIdxRef.current + 1) % TRACKS.length;
+    selectTrack(next);
+  }, [selectTrack]);
+
+  const prevTrack = useCallback(() => {
+    const prev = (trackIdxRef.current - 1 + TRACKS.length) % TRACKS.length;
+    selectTrack(prev);
+  }, [selectTrack]);
+
+  // ── Cleanup on unmount ────────────────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      stopScheduler();
+      isPlayingRef.current = false;
+      ctxRef.current?.close().catch(() => {});
+    };
+  }, [stopScheduler]);
+
+  const currentTrack = TRACKS[trackIdx];
+
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="fixed bottom-6 right-6 z-40">
-      <div className="relative flex items-center gap-2">
-        {/* Expanded Controls Card */}
-        {showControls && (
-          <div className="glass-panel p-5 rounded-3xl border border-stone-200/90 shadow-2xl text-xs space-y-3.5 mr-2 animate-scaleIn w-72 text-stone-800 bg-white">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
-              <span className="font-serif font-bold text-stone-900 flex items-center gap-1.5 text-sm">
-                <Music className="w-4 h-4 text-rose-600" />
-                <span>Romantic Soundtrack</span>
-              </span>
-              <span className="text-[10px] text-stone-500 font-mono">
-                {isPlaying ? '● Playing' : '○ Paused'}
-              </span>
-            </div>
+    <div className="fixed bottom-6 right-6 z-40 flex items-end gap-2">
 
-            {/* Current Track Info */}
-            <div className="bg-stone-50 p-3 rounded-2xl border border-stone-200/70 space-y-1">
-              <p className="text-xs font-bold text-stone-900 truncate">
-                ♪ {currentTrack.name}
-              </p>
-              <p className="text-[10px] text-stone-500 truncate">
-                {currentTrack.artist}
-              </p>
-            </div>
+      {/* ── Expanded Control Panel ───────────────────────────────────────── */}
+      {showPanel && (
+        <div
+          className="w-72 bg-white rounded-3xl border border-stone-200 shadow-2xl p-5 space-y-4 text-stone-800 animate-scaleIn mb-1"
+          style={{ transformOrigin: 'bottom right' }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+            <span className="font-serif font-bold text-stone-900 flex items-center gap-1.5 text-sm">
+              <Music className="w-4 h-4 text-rose-600" />
+              Romantic Soundtrack
+            </span>
+            <span className={`text-[10px] font-mono font-semibold ${isPlaying ? 'text-rose-600' : 'text-stone-400'}`}>
+              {isPlaying ? '● Playing' : '○ Paused'}
+            </span>
+          </div>
 
-            {/* Track Switcher Controls */}
-            <div className="flex items-center justify-between pt-1">
-              <button
-                type="button"
-                onClick={prevTrack}
-                className="p-2 rounded-full hover:bg-stone-100 text-stone-700 transition-colors"
-                title="Previous Track"
-              >
-                <SkipBack className="w-4 h-4" />
-              </button>
+          {/* Now Playing */}
+          <div className="bg-rose-50 border border-rose-200/70 rounded-2xl p-3 space-y-0.5">
+            <p className="text-[11px] text-rose-800 font-semibold uppercase tracking-wider">Now Playing</p>
+            <p className="text-xs font-bold text-stone-900 truncate">{currentTrack.name}</p>
+          </div>
 
-              <button
-                type="button"
-                onClick={togglePlay}
-                className="px-5 py-2 rounded-full bg-rose-700 hover:bg-rose-800 text-white font-semibold text-xs shadow-xs flex items-center gap-1.5 transition-all active:scale-95"
-              >
-                {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                <span>{isPlaying ? 'Pause' : 'Play Music'}</span>
-              </button>
+          {/* Play Controls */}
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={prevTrack}
+              className="p-2 rounded-full hover:bg-stone-100 text-stone-600 transition-colors"
+              title="Previous"
+            >
+              <SkipBack className="w-4 h-4" />
+            </button>
 
-              <button
-                type="button"
-                onClick={nextTrack}
-                className="p-2 rounded-full hover:bg-stone-100 text-stone-700 transition-colors"
-                title="Next Track"
-              >
-                <SkipForward className="w-4 h-4" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={togglePlay}
+              className="px-5 py-2 rounded-full bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold flex items-center gap-1.5 shadow transition-all active:scale-95"
+            >
+              {isPlaying
+                ? <><Pause className="w-3.5 h-3.5" /> Pause</>
+                : <><Play className="w-3.5 h-3.5 fill-current" /> Play</>
+              }
+            </button>
 
-            {/* Track List Selector */}
-            <div className="space-y-1 pt-2 border-t border-stone-100">
-              <span className="text-[10px] uppercase tracking-wider text-stone-400 font-semibold block mb-1">
-                Choose Song:
-              </span>
-              {TRACKS.map((t, idx) => (
+            <button
+              type="button"
+              onClick={nextTrack}
+              className="p-2 rounded-full hover:bg-stone-100 text-stone-600 transition-colors"
+              title="Next"
+            >
+              <SkipForward className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Track List */}
+          <div className="space-y-1 border-t border-stone-100 pt-3">
+            <p className="text-[10px] uppercase tracking-widest text-stone-400 font-semibold mb-1.5">Choose Track</p>
+            {TRACKS.map((t, idx) => {
+              const active = trackIdx === idx;
+              return (
                 <button
                   key={t.id}
                   type="button"
                   onClick={() => selectTrack(idx)}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-[11px] truncate flex items-center justify-between transition-colors ${
-                    trackIndex === idx && isPlaying
-                      ? 'bg-rose-50 text-rose-900 font-bold border border-rose-300 shadow-xs'
-                      : trackIndex === idx
-                      ? 'bg-stone-100 text-stone-800 font-semibold'
-                      : 'text-stone-600 hover:bg-stone-50'
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-2 transition-all ${
+                    active
+                      ? 'bg-rose-50 border border-rose-300 text-rose-900 font-bold shadow-sm'
+                      : 'hover:bg-stone-50 text-stone-600 border border-transparent'
                   }`}
                 >
-                  <span className="truncate">{t.name.split('(')[0]}</span>
-                  {trackIndex === idx && <Check className="w-3.5 h-3.5 text-rose-600 shrink-0" />}
+                  <span className="truncate">{t.label}</span>
+                  {active && isPlaying && (
+                    <span className="flex items-center gap-0.5 shrink-0">
+                      <span className="w-0.5 h-2.5 bg-rose-600 rounded-full animate-bounce" />
+                      <span className="w-0.5 h-3.5 bg-rose-500 rounded-full animate-pulse" />
+                      <span className="w-0.5 h-2 bg-rose-600 rounded-full animate-bounce" />
+                    </span>
+                  )}
+                  {active && !isPlaying && <Check className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
                 </button>
-              ))}
-            </div>
-
-            {/* Volume Slider */}
-            <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
-              <Volume2 className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={volume}
-                onChange={(e) => setVolume(parseFloat(e.target.value))}
-                className="w-full accent-rose-600 h-1.5 bg-stone-200 rounded-lg cursor-pointer"
-              />
-            </div>
+              );
+            })}
           </div>
-        )}
 
-        {/* Main Floating Audio Pill Button */}
+          {/* Volume */}
+          <div className="flex items-center gap-2.5 border-t border-stone-100 pt-3">
+            <Volume2 className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              className="w-full accent-rose-600 cursor-pointer h-1.5"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Floating Pill Button ─────────────────────────────────────────── */}
+      <button
+        type="button"
+        onClick={() => {
+          if (!isPlaying && !showPanel) {
+            // First tap: start music + show panel
+            startTrack(trackIdxRef.current);
+            setIsPlaying(true);
+            setShowPanel(true);
+          } else {
+            setShowPanel((prev) => !prev);
+          }
+        }}
+        className={`flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg border transition-all duration-300 ${
+          isPlaying
+            ? 'bg-rose-50 border-rose-300 text-rose-900'
+            : 'bg-white border-stone-300 text-stone-700 hover:border-stone-400'
+        }`}
+        title="Romantic Ambient Music"
+      >
+        {isPlaying ? (
+          <>
+            <span className="flex items-center gap-0.5 h-4">
+              <span className="w-1 h-2.5 bg-rose-600 rounded-full animate-pulse" />
+              <span className="w-1 h-4 bg-rose-700 rounded-full animate-bounce" />
+              <span className="w-1 h-2 bg-rose-500 rounded-full animate-pulse" />
+            </span>
+            <span className="text-xs font-semibold">Music On ♫</span>
+          </>
+        ) : (
+          <>
+            <Volume2 className="w-4 h-4 text-stone-500" />
+            <span className="text-xs font-semibold">Play Music ♫</span>
+          </>
+        )}
+      </button>
+
+      {/* Quick stop button when playing */}
+      {isPlaying && (
         <button
           type="button"
-          onClick={() => {
-            if (!isPlaying) {
-              togglePlay();
-              setShowControls(true);
-            } else {
-              setShowControls(!showControls);
-            }
-          }}
-          className={`flex items-center gap-2.5 px-4 py-2.5 rounded-full shadow-md backdrop-blur-md border transition-all duration-300 ${
-            isPlaying
-              ? 'bg-rose-50 border-rose-300 text-rose-900 shadow-glow-rose'
-              : 'bg-white/95 border-stone-300 text-stone-700 hover:bg-white hover:border-stone-400'
-          }`}
-          title="Toggle Romantic Ambience Music"
+          onClick={togglePlay}
+          className="p-2.5 rounded-full bg-white border border-stone-200 shadow text-stone-600 hover:text-rose-700 transition-colors"
+          title="Pause Music"
         >
-          {isPlaying ? (
-            <>
-              <div className="flex items-center gap-0.5 h-4">
-                <span className="w-1 h-3 bg-rose-600 rounded-full animate-pulse" />
-                <span className="w-1 h-4 bg-rose-700 rounded-full animate-bounce" />
-                <span className="w-1 h-2 bg-rose-500 rounded-full animate-pulse" />
-              </div>
-              <span className="text-xs font-semibold">Music On ♫</span>
-            </>
-          ) : (
-            <>
-              <Volume2 className="w-4 h-4 text-stone-500" />
-              <span className="text-xs font-semibold">Play Music ♫</span>
-            </>
-          )}
+          <Pause className="w-3.5 h-3.5" />
         </button>
-
-        {isPlaying && (
-          <button
-            type="button"
-            onClick={togglePlay}
-            className="p-2.5 rounded-full bg-white border border-stone-200 text-stone-700 hover:text-rose-700 shadow-sm"
-            title="Pause Music"
-          >
-            <Pause className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
+      )}
     </div>
   );
 };

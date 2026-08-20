@@ -21,13 +21,13 @@ import {
 export const INITIAL_PROFILE: CoupleProfile = {
   partner1Name: 'Farjana Akter',
   partner2Name: 'Md Nasif Kamran',
-  partner1Avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-  partner2Avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+  partner1Avatar: '/farjana-avatar.jpg',
+  partner2Avatar: '/kamran-avatar.jpg',
   weddingDate: '2026-08-19',
   relationshipStartDate: '2019-10-14',
   heroTagline: 'Farjana Akter & Md Nasif Kamran',
   heroQuote: 'Today is not the end of our story. It is the beginning of all the memories we are going to make together.',
-  heroImage: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1920&q=85',
+  heroImage: '/hero-wedding.jpg',
   coverImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1920&q=85',
   location: 'Dhaka, Bangladesh'
 };

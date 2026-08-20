@@ -97,8 +97,27 @@ export class StoryStorage {
     if (!profile.partner2Name || profile.partner2Name === 'Naim') {
       profile.partner2Name = 'Md Nasif Kamran';
     }
+    // Migrate old Unsplash hero image to the new local wedding photo
+    const OLD_HERO_URLS = [
+      'https://images.unsplash.com/photo-1583939003579',
+      'https://images.unsplash.com/photo-15839',
+    ];
+    if (OLD_HERO_URLS.some(u => profile.heroImage?.startsWith(u))) {
+      profile.heroImage = '/hero-wedding.jpg';
+    }
+    // Migrate old Unsplash avatar placeholders to the new local couple photo
+    const OLD_AVATAR_P1 = 'https://images.unsplash.com/photo-1534528741775';
+    const OLD_AVATAR_P2 = 'https://images.unsplash.com/photo-1507003211169';
+    if (profile.partner1Avatar?.startsWith(OLD_AVATAR_P1)) {
+      profile.partner1Avatar = '/kamran-avatar.jpg';
+    }
+    if (profile.partner2Avatar?.startsWith(OLD_AVATAR_P2)) {
+      profile.partner2Avatar = '/kamran-avatar.jpg';
+    }
+    setStored(KEYS.PROFILE, profile);
     return profile;
   }
+
 
   static setProfile(profile: CoupleProfile): void {
     setStored(KEYS.PROFILE, profile);
