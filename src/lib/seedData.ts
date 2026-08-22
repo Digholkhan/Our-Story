@@ -23,7 +23,7 @@ export const INITIAL_PROFILE: CoupleProfile = {
   partner2Name: 'Md Nasif Kamran',
   partner1Avatar: '/farjana-avatar.jpg',
   partner2Avatar: '/kamran-avatar.jpg',
-  weddingDate: '2026-08-19',
+  weddingDate: '2026-08-24',
   relationshipStartDate: '2019-10-14',
   heroTagline: 'Farjana Akter & Md Nasif Kamran',
   heroQuote: 'Today is not the end of our story. It is the beginning of all the memories we are going to make together.',

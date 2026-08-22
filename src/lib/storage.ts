@@ -35,6 +35,10 @@ import {
   INITIAL_GUEST_MESSAGES,
   INITIAL_CHAT_MESSAGES
 } from './seedData';
+import {
+  saveToRealtimeNode,
+  seedRealtimeDBIfEmpty
+} from './firebase';
 
 const KEYS = {
   PROFILE: 'our_story_profile_v2',
@@ -88,6 +92,29 @@ export class StoryStorage {
     setStored(KEYS.SESSION, session);
   }
 
+  // Seed Firebase Realtime Database on startup if empty
+  static async seedFirebaseIfEmpty(): Promise<void> {
+    const seedMap = {
+      profile: this.getProfile(),
+      albums: this.getAlbums(),
+      memories: this.getMemories(),
+      timeline: this.getTimeline(),
+      letters: this.getLetters(),
+      calendarEvents: this.getCalendar(),
+      dateIdeas: this.getDateIdeas(),
+      goals: this.getGoals(),
+      bucketList: this.getBucketList(),
+      futureMemories: this.getFutureMemories(),
+      loveReasons: this.getLoveReasons(),
+      notes: this.getNotes(),
+      songs: this.getSongs(),
+      surprises: this.getSurprises(),
+      guestMessages: this.getGuestMessages(),
+      chatMessages: this.getChatMessages()
+    };
+    await seedRealtimeDBIfEmpty(seedMap);
+  }
+
   // Profile
   static getProfile(): CoupleProfile {
     const profile = getStored<CoupleProfile>(KEYS.PROFILE, INITIAL_PROFILE);
@@ -97,7 +124,6 @@ export class StoryStorage {
     if (!profile.partner2Name || profile.partner2Name === 'Naim') {
       profile.partner2Name = 'Md Nasif Kamran';
     }
-    // Migrate old Unsplash hero image to the new local wedding photo
     const OLD_HERO_URLS = [
       'https://images.unsplash.com/photo-1583939003579',
       'https://images.unsplash.com/photo-15839',
@@ -105,7 +131,6 @@ export class StoryStorage {
     if (OLD_HERO_URLS.some(u => profile.heroImage?.startsWith(u))) {
       profile.heroImage = '/hero-wedding.jpg';
     }
-    // Migrate old Unsplash avatar placeholders to the new local couple photo
     const OLD_AVATAR_P1 = 'https://images.unsplash.com/photo-1534528741775';
     const OLD_AVATAR_P2 = 'https://images.unsplash.com/photo-1507003211169';
     if (profile.partner1Avatar?.startsWith(OLD_AVATAR_P1)) {
@@ -118,9 +143,9 @@ export class StoryStorage {
     return profile;
   }
 
-
   static setProfile(profile: CoupleProfile): void {
     setStored(KEYS.PROFILE, profile);
+    saveToRealtimeNode('profile', profile);
   }
 
   // Albums
@@ -137,11 +162,13 @@ export class StoryStorage {
       albums.unshift(album);
     }
     setStored(KEYS.ALBUMS, albums);
+    saveToRealtimeNode('albums', albums);
   }
 
   static deleteAlbum(albumId: string): void {
     const albums = this.getAlbums().filter((a) => a.id !== albumId);
     setStored(KEYS.ALBUMS, albums);
+    saveToRealtimeNode('albums', albums);
   }
 
   // Memories
@@ -158,11 +185,13 @@ export class StoryStorage {
       memories.unshift(memory);
     }
     setStored(KEYS.MEMORIES, memories);
+    saveToRealtimeNode('memories', memories);
   }
 
   static deleteMemory(memoryId: string): void {
     const memories = this.getMemories().filter((m) => m.id !== memoryId);
     setStored(KEYS.MEMORIES, memories);
+    saveToRealtimeNode('memories', memories);
   }
 
   // Timeline
@@ -180,11 +209,13 @@ export class StoryStorage {
       events.push(event);
     }
     setStored(KEYS.TIMELINE, events);
+    saveToRealtimeNode('timeline', events);
   }
 
   static deleteTimelineEvent(id: string): void {
     const events = getStored<TimelineEvent[]>(KEYS.TIMELINE, INITIAL_TIMELINE).filter((e) => e.id !== id);
     setStored(KEYS.TIMELINE, events);
+    saveToRealtimeNode('timeline', events);
   }
 
   // Letters
@@ -201,11 +232,13 @@ export class StoryStorage {
       letters.unshift(letter);
     }
     setStored(KEYS.LETTERS, letters);
+    saveToRealtimeNode('letters', letters);
   }
 
   static deleteLetter(id: string): void {
     const letters = this.getLetters().filter((l) => l.id !== id);
     setStored(KEYS.LETTERS, letters);
+    saveToRealtimeNode('letters', letters);
   }
 
   // Calendar
@@ -222,11 +255,13 @@ export class StoryStorage {
       events.push(event);
     }
     setStored(KEYS.CALENDAR, events);
+    saveToRealtimeNode('calendarEvents', events);
   }
 
   static deleteCalendarEvent(id: string): void {
     const events = this.getCalendar().filter((e) => e.id !== id);
     setStored(KEYS.CALENDAR, events);
+    saveToRealtimeNode('calendarEvents', events);
   }
 
   // Date Night Ideas
@@ -238,6 +273,7 @@ export class StoryStorage {
     const ideas = this.getDateIdeas();
     ideas.unshift(idea);
     setStored(KEYS.DATE_IDEAS, ideas);
+    saveToRealtimeNode('dateIdeas', ideas);
   }
 
   // Goals
@@ -254,11 +290,13 @@ export class StoryStorage {
       goals.unshift(goal);
     }
     setStored(KEYS.GOALS, goals);
+    saveToRealtimeNode('goals', goals);
   }
 
   static deleteGoal(id: string): void {
     const goals = this.getGoals().filter((g) => g.id !== id);
     setStored(KEYS.GOALS, goals);
+    saveToRealtimeNode('goals', goals);
   }
 
   // Bucket List
@@ -275,11 +313,13 @@ export class StoryStorage {
       list.unshift(item);
     }
     setStored(KEYS.BUCKET_LIST, list);
+    saveToRealtimeNode('bucketList', list);
   }
 
   static deleteBucketItem(id: string): void {
     const list = this.getBucketList().filter((i) => i.id !== id);
     setStored(KEYS.BUCKET_LIST, list);
+    saveToRealtimeNode('bucketList', list);
   }
 
   // Future Memories
@@ -296,6 +336,7 @@ export class StoryStorage {
       list.push(item);
     }
     setStored(KEYS.FUTURE_MEMORIES, list);
+    saveToRealtimeNode('futureMemories', list);
   }
 
   // Love Reasons
@@ -307,11 +348,13 @@ export class StoryStorage {
     const list = this.getLoveReasons();
     list.unshift(reason);
     setStored(KEYS.LOVE_REASONS, list);
+    saveToRealtimeNode('loveReasons', list);
   }
 
   static deleteLoveReason(id: string): void {
     const list = this.getLoveReasons().filter((r) => r.id !== id);
     setStored(KEYS.LOVE_REASONS, list);
+    saveToRealtimeNode('loveReasons', list);
   }
 
   // Shared Notes
@@ -328,11 +371,13 @@ export class StoryStorage {
       notes.unshift(note);
     }
     setStored(KEYS.NOTES, notes);
+    saveToRealtimeNode('notes', notes);
   }
 
   static deleteNote(id: string): void {
     const notes = this.getNotes().filter((n) => n.id !== id);
     setStored(KEYS.NOTES, notes);
+    saveToRealtimeNode('notes', notes);
   }
 
   // Songs
@@ -344,11 +389,13 @@ export class StoryStorage {
     const songs = this.getSongs();
     songs.unshift(song);
     setStored(KEYS.SONGS, songs);
+    saveToRealtimeNode('songs', songs);
   }
 
   static deleteSong(id: string): void {
     const songs = this.getSongs().filter((s) => s.id !== id);
     setStored(KEYS.SONGS, songs);
+    saveToRealtimeNode('songs', songs);
   }
 
   // Surprises
@@ -365,6 +412,7 @@ export class StoryStorage {
       surprises.unshift(surprise);
     }
     setStored(KEYS.SURPRISES, surprises);
+    saveToRealtimeNode('surprises', surprises);
   }
 
   // Guest Messages
@@ -381,11 +429,13 @@ export class StoryStorage {
       messages.unshift(msg);
     }
     setStored(KEYS.GUEST_MESSAGES, messages);
+    saveToRealtimeNode('guestMessages', messages);
   }
 
   static deleteGuestMessage(id: string): void {
     const messages = this.getGuestMessages().filter((m) => m.id !== id);
     setStored(KEYS.GUEST_MESSAGES, messages);
+    saveToRealtimeNode('guestMessages', messages);
   }
 
   // Chat Messages
@@ -402,11 +452,13 @@ export class StoryStorage {
       messages.push(msg);
     }
     setStored(KEYS.CHAT_MESSAGES, messages);
+    saveToRealtimeNode('chatMessages', messages);
   }
 
   static deleteChatMessage(id: string): void {
     const messages = this.getChatMessages().filter((m) => m.id !== id);
     setStored(KEYS.CHAT_MESSAGES, messages);
+    saveToRealtimeNode('chatMessages', messages);
   }
 
   // Reset demo data to defaults

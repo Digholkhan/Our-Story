@@ -30,7 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="flex items-center gap-2 group text-left focus:outline-none"
         >
           <span className="font-serif text-2xl sm:text-3xl text-stone-900 tracking-normal font-normal group-hover:text-rose-800 transition-colors">
-            Our Story
+            Our Story ❤️
           </span>
         </button>
 
@@ -38,33 +38,29 @@ export const Navbar: React.FC<NavbarProps> = ({
         <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-stone-700">
           <button
             onClick={() => setActiveTab('landing')}
-            className={`transition-colors hover:text-rose-800 ${
-              activeTab === 'landing' ? 'text-stone-900 font-semibold border-b-2 border-stone-900 pb-0.5' : ''
-            }`}
+            className={`transition-colors hover:text-rose-800 ${activeTab === 'landing' ? 'text-stone-900 font-semibold border-b-2 border-stone-900 pb-0.5' : ''
+              }`}
           >
             Home
           </button>
           <button
             onClick={() => setActiveTab('timeline')}
-            className={`transition-colors hover:text-rose-800 ${
-              activeTab === 'timeline' ? 'text-stone-900 font-semibold border-b-2 border-stone-900 pb-0.5' : ''
-            }`}
+            className={`transition-colors hover:text-rose-800 ${activeTab === 'timeline' ? 'text-stone-900 font-semibold border-b-2 border-stone-900 pb-0.5' : ''
+              }`}
           >
             Our Story
           </button>
           <button
             onClick={() => setActiveTab('memories')}
-            className={`transition-colors hover:text-rose-800 ${
-              activeTab === 'memories' ? 'text-stone-900 font-semibold border-b-2 border-stone-900 pb-0.5' : ''
-            }`}
+            className={`transition-colors hover:text-rose-800 ${activeTab === 'memories' ? 'text-stone-900 font-semibold border-b-2 border-stone-900 pb-0.5' : ''
+              }`}
           >
             Memories
           </button>
           <button
             onClick={() => setActiveTab('messages')}
-            className={`transition-colors hover:text-rose-800 ${
-              activeTab === 'messages' ? 'text-stone-900 font-semibold border-b-2 border-stone-900 pb-0.5' : ''
-            }`}
+            className={`transition-colors hover:text-rose-800 ${activeTab === 'messages' ? 'text-stone-900 font-semibold border-b-2 border-stone-900 pb-0.5' : ''
+              }`}
           >
             Messages
           </button>
@@ -74,9 +70,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <>
               <button
                 onClick={() => setActiveTab('dashboard')}
-                className={`transition-colors hover:text-rose-800 flex items-center gap-1.5 ${
-                  activeTab === 'dashboard' ? 'text-rose-800 font-semibold border-b-2 border-rose-800 pb-0.5' : ''
-                }`}
+                className={`transition-colors hover:text-rose-800 flex items-center gap-1.5 ${activeTab === 'dashboard' ? 'text-rose-800 font-semibold border-b-2 border-rose-800 pb-0.5' : ''
+                  }`}
               >
                 <Sparkles className="w-3.5 h-3.5 text-rose-500" />
                 <span>Couple Space</span>
@@ -84,9 +79,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <button
                 onClick={() => setActiveTab('chat')}
-                className={`transition-colors hover:text-rose-800 flex items-center gap-1.5 ${
-                  activeTab === 'chat' ? 'text-rose-800 font-semibold border-b-2 border-rose-800 pb-0.5' : ''
-                }`}
+                className={`transition-colors hover:text-rose-800 flex items-center gap-1.5 ${activeTab === 'chat' ? 'text-rose-800 font-semibold border-b-2 border-rose-800 pb-0.5' : ''
+                  }`}
               >
                 <MessageCircle className="w-3.5 h-3.5 text-rose-500" />
                 <span>Chat 💬</span>

@@ -6,6 +6,11 @@ import {
   GuestMessage, SessionState, ChatMessage
 } from './types';
 import { StoryStorage } from './lib/storage';
+import {
+  subscribeToAuth,
+  subscribeToRealtimeNode,
+  AuthUserInfo
+} from './lib/firebase';
 
 // UI Components
 import { ParticlesCanvas } from './components/ui/ParticlesCanvas';
@@ -57,6 +62,7 @@ function App() {
   const [guestMessages, setGuestMessages] = useState<GuestMessage[]>(StoryStorage.getGuestMessages());
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(StoryStorage.getChatMessages());
   const [session, setSession] = useState<SessionState>(StoryStorage.getSession());
+  const [authUser, setAuthUser] = useState<AuthUserInfo | null>(null);
 
   // UI State
   const [activeTab, setActiveTab] = useState<string>('landing');
@@ -67,10 +73,115 @@ function App() {
   const [showWriteLetterModal, setShowWriteLetterModal] = useState(false);
   const [showReplaySlideshow, setShowReplaySlideshow] = useState(false);
 
+  // =================== FIREBASE REALTIME SUBSCRIPTIONS ===================
+  useEffect(() => {
+    // Seed database with default data if empty
+    StoryStorage.seedFirebaseIfEmpty();
+
+    // 1. Firebase Auth listener
+    const unsubAuth = subscribeToAuth((user) => {
+      setAuthUser(user);
+      if (user) {
+        const newSession: SessionState = {
+          role: user.role,
+          isLoggedIn: true,
+          activePartner: user.activePartner
+        };
+        setSession(newSession);
+        StoryStorage.setSession(newSession);
+      }
+    });
+
+    // 2. Realtime Database listeners
+    const unsubProfile = subscribeToRealtimeNode<CoupleProfile>('profile', (val) => {
+      if (val) setProfile(val);
+    });
+
+    const unsubAlbums = subscribeToRealtimeNode<Album[]>('albums', (val) => {
+      if (val) setAlbums(val);
+    });
+
+    const unsubMemories = subscribeToRealtimeNode<Memory[]>('memories', (val) => {
+      if (val) setMemories(val);
+    });
+
+    const unsubTimeline = subscribeToRealtimeNode<TimelineEvent[]>('timeline', (val) => {
+      if (val) setTimeline(val);
+    });
+
+    const unsubLetters = subscribeToRealtimeNode<LoveLetter[]>('letters', (val) => {
+      if (val) setLetters(val);
+    });
+
+    const unsubCalendar = subscribeToRealtimeNode<CalendarEvent[]>('calendarEvents', (val) => {
+      if (val) setCalendarEvents(val);
+    });
+
+    const unsubDateIdeas = subscribeToRealtimeNode<DateNightIdea[]>('dateIdeas', (val) => {
+      if (val) setDateIdeas(val);
+    });
+
+    const unsubGoals = subscribeToRealtimeNode<CoupleGoal[]>('goals', (val) => {
+      if (val) setGoals(val);
+    });
+
+    const unsubBucketList = subscribeToRealtimeNode<BucketListItem[]>('bucketList', (val) => {
+      if (val) setBucketList(val);
+    });
+
+    const unsubFutureMemories = subscribeToRealtimeNode<FutureMemory[]>('futureMemories', (val) => {
+      if (val) setFutureMemories(val);
+    });
+
+    const unsubLoveReasons = subscribeToRealtimeNode<LoveReason[]>('loveReasons', (val) => {
+      if (val) setLoveReasons(val);
+    });
+
+    const unsubNotes = subscribeToRealtimeNode<SharedNote[]>('notes', (val) => {
+      if (val) setNotes(val);
+    });
+
+    const unsubSongs = subscribeToRealtimeNode<SongItem[]>('songs', (val) => {
+      if (val) setSongs(val);
+    });
+
+    const unsubSurprises = subscribeToRealtimeNode<Surprise[]>('surprises', (val) => {
+      if (val) setSurprises(val);
+    });
+
+    const unsubGuestMessages = subscribeToRealtimeNode<GuestMessage[]>('guestMessages', (val) => {
+      if (val) setGuestMessages(val);
+    });
+
+    const unsubChatMessages = subscribeToRealtimeNode<ChatMessage[]>('chatMessages', (val) => {
+      if (val) setChatMessages(val);
+    });
+
+    return () => {
+      unsubAuth();
+      unsubProfile();
+      unsubAlbums();
+      unsubMemories();
+      unsubTimeline();
+      unsubLetters();
+      unsubCalendar();
+      unsubDateIdeas();
+      unsubGoals();
+      unsubBucketList();
+      unsubFutureMemories();
+      unsubLoveReasons();
+      unsubNotes();
+      unsubSongs();
+      unsubSurprises();
+      unsubGuestMessages();
+      unsubChatMessages();
+    };
+  }, []);
+
   // =================== HANDLERS ===================
 
   // Auth
-  const handleLogin = useCallback((partner: 'partner1' | 'partner2', _password: string) => {
+  const handleLogin = useCallback((partner: 'partner1' | 'partner2', _email?: string) => {
     const newSession: SessionState = {
       role: partner === 'partner1' ? 'partner1' : 'partner2',
       isLoggedIn: true,
@@ -87,6 +198,7 @@ function App() {
       activePartner: 'partner1',
     };
     setSession(newSession);
+    setAuthUser(null);
     StoryStorage.setSession(newSession);
     setActiveTab('landing');
   }, []);
@@ -260,30 +372,13 @@ function App() {
     setGuestMessages(StoryStorage.getGuestMessages());
   }, []);
 
-  const handleTogglePinMessage = useCallback((id: string) => {
-    const msg = guestMessages.find((m) => m.id === id);
-    if (!msg) return;
-    StoryStorage.saveGuestMessage({ ...msg, isPinned: !msg.isPinned });
-    setGuestMessages(StoryStorage.getGuestMessages());
-  }, [guestMessages]);
-
-  const handleToggleHideMessage = useCallback((id: string) => {
-    const msg = guestMessages.find((m) => m.id === id);
-    if (!msg) return;
-    StoryStorage.saveGuestMessage({
-      ...msg,
-      status: msg.status === 'hidden' ? 'approved' : 'hidden',
-    });
-    setGuestMessages(StoryStorage.getGuestMessages());
-  }, [guestMessages]);
-
   const handleDeleteGuestMessage = useCallback((id: string) => {
     StoryStorage.deleteGuestMessage(id);
     setGuestMessages(StoryStorage.getGuestMessages());
   }, []);
 
   // Chat Messages
-  const handleSendMessage = useCallback((msg: ChatMessage) => {
+  const handleSaveChatMessage = useCallback((msg: ChatMessage) => {
     StoryStorage.saveChatMessage(msg);
     setChatMessages(StoryStorage.getChatMessages());
   }, []);
@@ -294,13 +389,15 @@ function App() {
   }, []);
 
   const handleAddChatReaction = useCallback((msgId: string, emoji: string) => {
-    const msg = chatMessages.find((m) => m.id === msgId);
-    if (!msg) return;
-    StoryStorage.saveChatMessage({ ...msg, reaction: emoji });
-    setChatMessages(StoryStorage.getChatMessages());
+    const msg = chatMessages.find(m => m.id === msgId);
+    if (msg) {
+      const updated = { ...msg, reaction: emoji };
+      StoryStorage.saveChatMessage(updated);
+      setChatMessages(StoryStorage.getChatMessages());
+    }
   }, [chatMessages]);
 
-  // Reset Data
+  // Admin Reset
   const handleResetData = useCallback(() => {
     StoryStorage.resetAllData();
     setProfile(StoryStorage.getProfile());
@@ -321,32 +418,10 @@ function App() {
     setChatMessages(StoryStorage.getChatMessages());
   }, []);
 
-  // Date Night - log as memory
-  const handleLogDateAsMemory = useCallback((idea: DateNightIdea) => {
-    alert(`"${idea.title}" logged! Click "Add Memory" in the navbar to save your date night photo!`);
-  }, []);
+  // Wedding memories filter for slideshow
+  const weddingMemories = memories.filter((m) => m.albumId === 'alb-wedding-day' || m.tags.includes('Wedding'));
 
-  // Wedding memories for slideshow
-  const weddingMemories = memories.filter(
-    (m) =>
-      m.tags.some((t) => t.toLowerCase().includes('wedding')) ||
-      m.albumId === 'alb-1' ||
-      m.title.toLowerCase().includes('wedding')
-  );
-
-  // Guard private tabs for non-logged-in users
-  const privateTabs = [
-    'dashboard', 'chat', 'letters', 'calendar', 'date-night', 'goals', 'bucket-list',
-    'love-reasons', 'notes', 'playlist', 'surprises', 'future-memories'
-  ];
-
-  useEffect(() => {
-    if (privateTabs.includes(activeTab) && !session.isLoggedIn) {
-      setShowLoginModal(true);
-    }
-  }, [activeTab, session.isLoggedIn]);
-
-  // =================== RENDER ===================
+  // Render view router
   const renderActiveView = () => {
     switch (activeTab) {
       case 'landing':
@@ -356,13 +431,20 @@ function App() {
             timeline={timeline}
             memories={memories}
             guestMessages={guestMessages}
-            onEnterStory={() => {
-              if (session.isLoggedIn) setActiveTab('dashboard');
-              else setActiveTab('timeline');
-            }}
+            onEnterStory={() => setActiveTab('timeline')}
             onOpenReplay={() => setShowReplaySlideshow(true)}
-            onSelectTab={setActiveTab}
+            onSelectTab={(tab: string) => setActiveTab(tab)}
             onOpenAddMessage={() => setShowAddMessageModal(true)}
+          />
+        );
+
+      case 'timeline':
+        return (
+          <TimelineView
+            timeline={timeline}
+            session={session}
+            onSaveEvent={handleSaveTimelineEvent}
+            onDeleteEvent={handleDeleteTimelineEvent}
           />
         );
 
@@ -381,13 +463,24 @@ function App() {
           />
         );
 
-      case 'timeline':
+      case 'messages':
         return (
-          <TimelineView
-            timeline={timeline}
+          <GuestMessageWall
+            messages={guestMessages}
             session={session}
-            onSaveEvent={handleSaveTimelineEvent}
-            onDeleteEvent={handleDeleteTimelineEvent}
+            onOpenAddModal={() => setShowAddMessageModal(true)}
+            onTogglePinMessage={(id: string) => {
+              const msg = guestMessages.find((m) => m.id === id);
+              if (msg) handleSaveGuestMessage({ ...msg, isPinned: !msg.isPinned });
+            }}
+            onToggleHideMessage={(id: string) => {
+              const msg = guestMessages.find((m) => m.id === id);
+              if (msg) {
+                const nextStatus = msg.status === 'hidden' ? 'approved' : 'hidden';
+                handleSaveGuestMessage({ ...msg, status: nextStatus });
+              }
+            }}
+            onDeleteMessage={handleDeleteGuestMessage}
           />
         );
 
@@ -395,25 +488,9 @@ function App() {
         return (
           <WeddingDayShowcase
             profile={profile}
-            memories={memories}
-            albums={albums}
-            session={session}
+            memories={weddingMemories}
             onOpenReplay={() => setShowReplaySlideshow(true)}
             onSelectPhoto={() => {}}
-            onSaveMemory={handleSaveMemory}
-            onDeleteMemory={handleDeleteMemory}
-          />
-        );
-
-      case 'messages':
-        return (
-          <GuestMessageWall
-            messages={guestMessages}
-            session={session}
-            onOpenAddModal={() => setShowAddMessageModal(true)}
-            onTogglePinMessage={handleTogglePinMessage}
-            onToggleHideMessage={handleToggleHideMessage}
-            onDeleteMessage={handleDeleteGuestMessage}
           />
         );
 
@@ -431,7 +508,7 @@ function App() {
             loveReasons={loveReasons}
             surprises={surprises}
             chatMessages={chatMessages}
-            onSelectTab={setActiveTab}
+            onSelectTab={(tab: string) => setActiveTab(tab)}
           />
         ) : null;
 
@@ -441,7 +518,7 @@ function App() {
             messages={chatMessages}
             session={session}
             profile={profile}
-            onSendMessage={handleSendMessage}
+            onSendMessage={handleSaveChatMessage}
             onDeleteMessage={handleDeleteChatMessage}
             onAddReaction={handleAddChatReaction}
           />
@@ -467,13 +544,29 @@ function App() {
           />
         ) : null;
 
-      case 'date-night':
+      case 'date-ideas':
         return session.isLoggedIn ? (
           <DateNightGenerator
             ideas={dateIdeas}
             session={session}
             onSaveIdea={handleSaveDateIdea}
-            onLogAsMemory={handleLogDateAsMemory}
+            onLogAsMemory={(idea: DateNightIdea) => {
+              const newMemory: Memory = {
+                id: `mem-date-${Date.now()}`,
+                title: `Date Night: ${idea.title}`,
+                caption: idea.description,
+                imageUrl: '/hero-wedding.jpg',
+                date: new Date().toISOString().split('T')[0],
+                location: '',
+                albumId: 'alb-3',
+                tags: ['Date Night', idea.category],
+                isFavorite: false,
+                visibility: 'COUPLE_ONLY',
+                author: session.activePartner === 'partner1' ? profile.partner1Name : profile.partner2Name,
+                createdAt: new Date().toISOString(),
+              };
+              handleSaveMemory(newMemory);
+            }}
           />
         ) : null;
 
@@ -577,6 +670,7 @@ function App() {
           onClose={() => setShowLoginModal(false)}
           onLogin={handleLogin}
           onLogout={handleLogout}
+          authUser={authUser}
         />
       )}
 

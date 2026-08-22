@@ -99,7 +99,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <img
             src={profile.heroImage}
             alt={`${profile.partner1Name} & ${profile.partner2Name}`}
-            className="w-full h-full object-cover object-center scale-105 filter brightness-[0.88] contrast-[1.02]"
+            className="animate-slow-zoom absolute inset-0 size-full object-cover"
           />
           {/* Warm romantic golden dusk overlay and dark vignette */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/40 to-black/70" />
