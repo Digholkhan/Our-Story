@@ -145,6 +145,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     onClose();
   };
 
+  const handleSwitchAccount = async () => {
+    clearMessages();
+    setLoading(true);
+    try {
+      await logoutFirebaseUser();
+      onLogout();
+      setMode("signin");
+      setSuccessMessage("Signed out. Sign in with the other partner's account.");
+    } catch (err: any) {
+      setError(err.message || "Unable to switch accounts.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleResendVerification = async () => {
     clearMessages();
     try {
@@ -249,31 +264,27 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 )}
             </div>
 
-            {/* Switch Active Partner */}
             <div className="glass-card p-4 rounded-2xl border border-stone-200/80 space-y-3 bg-stone-50">
               <p className="text-xs text-stone-600 font-semibold uppercase tracking-wider">
-                Switch Partner Persona:
+                Switch Account:
+              </p>
+              <p className="text-xs text-stone-500">
+                Sign out, then use the other partner's Gmail or create their account.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => onLogin("partner1", currentEmail)}
-                  className={`p-3 rounded-2xl text-xs font-semibold border transition-all flex items-center justify-center gap-2 ${
-                    session.activePartner === "partner1"
-                      ? "bg-rose-700 border-rose-700 text-white shadow-sm"
-                      : "bg-white border-stone-200 text-stone-700 hover:border-stone-300"
-                  }`}
+                  onClick={handleSwitchAccount}
+                  disabled={loading}
+                  className="p-3 rounded-2xl text-xs font-semibold border transition-all flex items-center justify-center gap-2 bg-white border-stone-200 text-stone-700 hover:border-stone-300 disabled:opacity-50"
                 >
-                  <span>{profile.partner1Name.split(" ")[0]}</span>
+                  <span>Sign in as {profile.partner1Name.split(" ")[0]}</span>
                 </button>
                 <button
-                  onClick={() => onLogin("partner2", currentEmail)}
-                  className={`p-3 rounded-2xl text-xs font-semibold border transition-all flex items-center justify-center gap-2 ${
-                    session.activePartner === "partner2"
-                      ? "bg-rose-700 border-rose-700 text-white shadow-sm"
-                      : "bg-white border-stone-200 text-stone-700 hover:border-stone-300"
-                  }`}
+                  onClick={handleSwitchAccount}
+                  disabled={loading}
+                  className="p-3 rounded-2xl text-xs font-semibold border transition-all flex items-center justify-center gap-2 bg-white border-stone-200 text-stone-700 hover:border-stone-300 disabled:opacity-50"
                 >
-                  <span>{profile.partner2Name.split(" ")[0]}</span>
+                  <span>Sign in as {profile.partner2Name.split(" ")[0]}</span>
                 </button>
               </div>
             </div>
@@ -304,7 +315,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 {mode === "reset" && "Reset Password 🔒"}
               </h3>
               <p className="text-xs text-stone-500">
-                Realtime database synchronized
+                Cloud data synchronized
               </p>
             </div>
           </div>

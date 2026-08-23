@@ -515,7 +515,7 @@ export function uploadCoupleFile(
   if (file.size > 25 * 1024 * 1024)
     return Promise.reject(new Error("File must be 25 MB or smaller."));
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const fullPath = `${path}/${currentUid()}-${Date.now()}-${safeName}`;
+  const fullPath = `couples/${getCurrentCoupleId()}/${path}/${currentUid()}-${Date.now()}-${safeName}`;
   const task: UploadTask = uploadBytesResumable(
     storageRef(storage, fullPath),
     file,
