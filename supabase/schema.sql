@@ -30,6 +30,19 @@ alter table public.app_users enable row level security;
 alter table public.couple_nodes enable row level security;
 alter table public.presence_status enable row level security;
 
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'couple-media',
+  'couple-media',
+  true,
+  26214400,
+  array['image/jpeg', 'image/png', 'image/webp', 'audio/mpeg', 'audio/wav', 'audio/ogg']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
 drop policy if exists app_users_select_own on public.app_users;
 create policy app_users_select_own
 on public.app_users for select
@@ -104,10 +117,19 @@ to authenticated
 with check (
   bucket_id = 'couple-media'
   and (storage.foldername(name))[1] = 'couples'
+  and (storage.foldername(name))[2] = (
+    select couple_id from public.app_users where id = auth.uid()
+  )
 );
 
 drop policy if exists storage_delete_own_couple on storage.objects;
 create policy storage_delete_own_couple
 on storage.objects for delete
 to authenticated
-using (bucket_id = 'couple-media');
+using (
+  bucket_id = 'couple-media'
+  and (storage.foldername(name))[1] = 'couples'
+  and (storage.foldername(name))[2] = (
+    select couple_id from public.app_users where id = auth.uid()
+  )
+);
