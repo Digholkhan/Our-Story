@@ -309,7 +309,7 @@ function App() {
               ...(await uploadCoupleFile(`memories/${mem.id}`, imageFile)),
             }
           : mem;
-        StoryStorage.saveMemory(savedMemory);
+        await StoryStorage.saveMemory(savedMemory);
         setMemories(StoryStorage.getMemories());
       } catch (error) {
         console.error("Unable to save memory:", error);

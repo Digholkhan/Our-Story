@@ -176,7 +176,7 @@ export class StoryStorage {
     return getStored<Memory[]>(KEYS.MEMORIES, INITIAL_MEMORIES);
   }
 
-  static saveMemory(memory: Memory): void {
+  static async saveMemory(memory: Memory): Promise<void> {
     const memories = this.getMemories();
     const idx = memories.findIndex((m) => m.id === memory.id);
     if (idx >= 0) {
@@ -185,7 +185,7 @@ export class StoryStorage {
       memories.unshift(memory);
     }
     setStored(KEYS.MEMORIES, memories);
-    saveToRealtimeNode('memories', memories);
+    await saveToRealtimeNode('memories', memories);
   }
 
   static deleteMemory(memoryId: string): void {

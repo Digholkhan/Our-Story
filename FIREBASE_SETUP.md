@@ -7,7 +7,7 @@
 3. Enable Authentication providers: Email/Password and Google.
 4. Enable email verification by using Firebase Authentication email templates.
 5. Create a Firestore database in production mode.
-6. Create a Realtime Database and choose a region.
+6. Create a Realtime Database and choose a region. It is used for presence only.
 7. Create a Storage bucket.
 8. In Authentication > Settings > Authorized domains, add `weeding-gift.vercel.app` and your local host.
 
@@ -39,7 +39,7 @@ firebase use <your-project-id>
 firebase deploy --only firestore:rules,storage,database
 ```
 
-The rules intentionally deny private couple data until the user's profile has the matching `coupleId`. Public timeline, public memories, and approved guest messages remain readable for the landing experience.
+The rules intentionally deny private couple data until the user's profile has the matching `coupleId`. Public timeline, public memories, and approved guest messages remain readable for the landing experience. Memories and all other couple content are stored in **Firestore** under `couples/{coupleId}/...`; uploaded files are stored in **Storage**. The Realtime Database contains presence data under `status/{uid}`.
 
 ## 4. Run locally
 
@@ -54,8 +54,10 @@ Configure Email/Password and Google in the Firebase console before testing sign-
 
 1. Import the repository into Vercel.
 2. Add all `.env.example` variables in Project Settings > Environment Variables, including `VITE_FIREBASE_COUPLE_ID`.
-3. Redeploy after saving the variables.
+3. Redeploy after saving the variables. Vite variables are compiled into the deployment, so changing a Vercel variable without a new deployment does not change the running app.
 4. Confirm `weeding-gift.vercel.app` is an authorized Firebase domain.
+
+When testing a memory upload, open the browser console. A failed Firestore or Storage write is reported there and the memory save now waits for the metadata write before completing. Check Firestore, not Realtime Database, for the memory document.
 
 The Firebase Web config is not an admin credential. Never add service-account JSON or Admin SDK credentials to this frontend repository.
 

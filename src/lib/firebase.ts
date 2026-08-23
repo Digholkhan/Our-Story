@@ -52,32 +52,34 @@ import {
 } from "firebase/storage";
 import { CoupleProfile, UserRole } from "../types";
 
+function readFirebaseEnv(name: string): string {
+  const value = String(import.meta.env[name] || "").trim();
+  return value.replace(/^(['"])(.*)\1$/, "$2").trim();
+}
+
 // Read Firebase Config from Vite environment variables
 const firebaseConfig = {
-  apiKey: (import.meta.env.VITE_FIREBASE_API_KEY || "").trim(),
-  authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "").trim(),
-  databaseURL: (import.meta.env.VITE_FIREBASE_DATABASE_URL || "").trim(),
-  projectId: (import.meta.env.VITE_FIREBASE_PROJECT_ID || "").trim(),
-  storageBucket: (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "").trim(),
-  messagingSenderId: (
-    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || ""
-  ).trim(),
-  appId: (import.meta.env.VITE_FIREBASE_APP_ID || "").trim(),
+  apiKey: readFirebaseEnv("VITE_FIREBASE_API_KEY"),
+  authDomain: readFirebaseEnv("VITE_FIREBASE_AUTH_DOMAIN"),
+  databaseURL: readFirebaseEnv("VITE_FIREBASE_DATABASE_URL"),
+  projectId: readFirebaseEnv("VITE_FIREBASE_PROJECT_ID"),
+  storageBucket: readFirebaseEnv("VITE_FIREBASE_STORAGE_BUCKET"),
+  messagingSenderId: readFirebaseEnv("VITE_FIREBASE_MESSAGING_SENDER_ID"),
+  appId: readFirebaseEnv("VITE_FIREBASE_APP_ID"),
 };
 
-export const configuredCoupleId = (
-  import.meta.env.VITE_FIREBASE_COUPLE_ID || ""
-).trim();
+export const configuredCoupleId = readFirebaseEnv("VITE_FIREBASE_COUPLE_ID");
 
 const hasInvalidEnvFormatting = Object.values(firebaseConfig).some((value) =>
   /[,\r\n]/.test(value),
 );
 const hasRequiredFirebaseConfig =
   Object.values(firebaseConfig).every(Boolean) && Boolean(configuredCoupleId);
+const hasValidDatabaseUrl = /^https:\/\/.+/.test(firebaseConfig.databaseURL);
 
 // Check if valid credentials are set
 export const isFirebaseConfigured = Boolean(
-  hasRequiredFirebaseConfig && !hasInvalidEnvFormatting,
+  hasRequiredFirebaseConfig && hasValidDatabaseUrl && !hasInvalidEnvFormatting,
 );
 
 if (!isFirebaseConfigured && Object.values(firebaseConfig).some(Boolean)) {
@@ -98,7 +100,7 @@ if (isFirebaseConfigured) {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
     auth = getAuth(app);
-    db = getDatabase(app);
+    db = getDatabase(app, firebaseConfig.databaseURL);
     firestore = getFirestore(app);
     storage = getStorage(app);
     console.log("⚡ Firebase initialized successfully");
@@ -659,26 +661,22 @@ export async function saveToRealtimeNode<T>(
     return;
   }
   if (!db) {
-    return;
+    throw new Error(
+      "Firebase is not configured. Check the Vercel VITE_FIREBASE_* variables and redeploy.",
+    );
   }
-  try {
-    const nodeRef = ref(db, nodePath);
-    await set(nodeRef, data);
-  } catch (err) {
-    console.error(`Error saving data to Realtime DB [${nodePath}]:`, err);
-  }
+  const nodeRef = ref(db, nodePath);
+  await set(nodeRef, data);
 }
 
 export async function deleteRealtimeNode(nodePath: string): Promise<void> {
   if (!db) {
-    return;
+    throw new Error(
+      "Firebase is not configured. Check the Vercel VITE_FIREBASE_* variables and redeploy.",
+    );
   }
-  try {
-    const nodeRef = ref(db, nodePath);
-    await remove(nodeRef);
-  } catch (err) {
-    console.error(`Error removing node from Realtime DB [${nodePath}]:`, err);
-  }
+  const nodeRef = ref(db, nodePath);
+  await remove(nodeRef);
 }
 
 // Seed Realtime DB if nodes are empty
