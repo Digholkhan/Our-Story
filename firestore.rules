@@ -21,6 +21,10 @@ service cloud.firestore {
         allow read, write: if member(coupleId);
       }
 
+      match /_indexes/{indexId} {
+        allow read, write: if member(coupleId);
+      }
+
       match /{collection}/{itemId} {
         allow read: if member(coupleId) ||
           (collection == 'timeline' && resource.data.visibility == 'PUBLIC') ||
