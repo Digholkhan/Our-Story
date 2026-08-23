@@ -19,7 +19,6 @@ import {
   resendVerificationEmail,
   resetPasswordEmail,
   signInWithEmail,
-  signInWithGoogle,
   signUpWithEmail,
 } from "../../lib/supabase";
 import { CoupleProfile, SessionState } from "../../types";
@@ -102,27 +101,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    clearMessages();
-    setLoading(true);
-    try {
-      const user = await signInWithGoogle(selectedPartner);
-      if (user) {
-        onLogin(user.activePartner, user.email || undefined);
-        setSuccessMessage("Signed in with Gmail successfully!");
-        setTimeout(() => {
-          onClose();
-        }, 500);
-      } else {
-        setSuccessMessage("Redirecting to Google sign-in...");
-      }
-    } catch (err: any) {
-      setError(err.message || "Gmail Authentication failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     clearMessages();
@@ -130,7 +108,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     try {
       await resetPasswordEmail(email);
       setSuccessMessage(
-        `Password reset link sent to ${email}. Please check your Gmail/Email inbox!`,
+        `Password reset link sent to ${email}. Please check your email inbox!`,
       );
     } catch (err: any) {
       setError(err.message || "Failed to send password reset email.");
@@ -156,7 +134,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       await logoutSupabaseUser();
       onLogout();
       setMode("signin");
-      setSuccessMessage("Signed out. Sign in with the other partner's account.");
+      setSuccessMessage(
+        "Signed out. Sign in with the other partner's account.",
+      );
     } catch (err: any) {
       setError(err.message || "Unable to switch accounts.");
     } finally {
@@ -273,7 +253,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 Switch Account:
               </p>
               <p className="text-xs text-stone-500">
-                Sign out, then use the other partner's Gmail or create their account.
+                Sign out, then use the other partner's email account or create
+                their account.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -318,9 +299,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 {mode === "signup" && "Create Account ✨"}
                 {mode === "reset" && "Reset Password 🔒"}
               </h3>
-              <p className="text-xs text-stone-500">
-                Cloud data synchronized
-              </p>
+              <p className="text-xs text-stone-500">Cloud data synchronized</p>
             </div>
           </div>
           <button
@@ -434,45 +413,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 </span>
               </button>
             </div>
-          </div>
-        )}
-
-        {/* Gmail Google Authentication Button */}
-        {mode !== "reset" && (
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className="w-full py-3 px-4 rounded-2xl bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 text-xs font-semibold flex items-center justify-center gap-3 shadow-xs transition-all disabled:opacity-50"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.27v3.15C3.25 21.3 7.31 24 12 24z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.28 14.24c-.25-.75-.38-1.55-.38-2.37s.13-1.62.38-2.37V6.35H1.27C.46 7.96 0 9.91 0 12s.46 4.04 1.27 5.65l4.01-3.41z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.27 6.35l4.01 3.41c.95-2.85 3.6-4.96 6.72-4.96z"
-              />
-            </svg>
-            <span>Continue with Gmail (Google Auth)</span>
-          </button>
-        )}
-
-        {mode !== "reset" && (
-          <div className="relative flex items-center justify-center">
-            <div className="border-t border-stone-200 w-full"></div>
-            <span className="bg-white px-3 text-[10px] text-stone-400 uppercase font-semibold">
-              Or with Email
-            </span>
           </div>
         )}
 
@@ -610,8 +550,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         {mode === "reset" && (
           <form onSubmit={handleResetPassword} className="space-y-4">
             <p className="text-xs text-stone-600">
-              Enter your registered Gmail or email address below and we will
-              send you a password reset link.
+              Enter your registered email address below and we will send you a
+              password reset link.
             </p>
             <div>
               <label className="block text-xs font-semibold uppercase text-stone-600 mb-1">

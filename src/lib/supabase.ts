@@ -81,7 +81,10 @@ export function getStoredPartnerAssignment(email?: string | null): PartnerRole {
   return saved === "partner2" ? "partner2" : "partner1";
 }
 
-export function setStoredPartnerAssignment(role: PartnerRole, email?: string | null): void {
+export function setStoredPartnerAssignment(
+  role: PartnerRole,
+  email?: string | null,
+): void {
   localStorage.setItem(PARTNER_ASSIGNMENT_KEY, role);
   if (email) {
     localStorage.setItem(`partner_role_${email}`, role);
@@ -218,28 +221,6 @@ export async function signInWithEmail(
   return userToAuthInfo(data.user, role);
 }
 
-export async function signInWithGoogle(
-  partnerRole?: PartnerRole,
-): Promise<AuthUserInfo | null> {
-  const client = requireSupabase();
-  const role = partnerRole || getStoredPartnerAssignment("google-user");
-  localStorage.setItem("pending_partner_role", role);
-
-  const { data, error } = await client.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: window.location.origin,
-    },
-  });
-
-  if (error) throw error;
-  if (data.url) {
-    window.location.assign(data.url);
-    return null;
-  }
-  return null;
-}
-
 export async function resetPasswordEmail(email: string): Promise<void> {
   const client = requireSupabase();
   const { error } = await client.auth.resetPasswordForEmail(email, {
@@ -276,7 +257,9 @@ export function subscribeToAuth(
     setStoredPartnerAssignment(resolvedRole, data.user.email);
     void saveUserProfile(data.user, resolvedRole as PartnerRole)
       .catch((err) => console.error(err))
-      .finally(() => callback(userToAuthInfo(data.user!, resolvedRole as UserRole)));
+      .finally(() =>
+        callback(userToAuthInfo(data.user!, resolvedRole as UserRole)),
+      );
   });
 
   const {
@@ -297,7 +280,9 @@ export function subscribeToAuth(
 
     void saveUserProfile(authUser, resolvedRole as PartnerRole)
       .catch((err) => console.error(err))
-      .finally(() => callback(userToAuthInfo(authUser, resolvedRole as UserRole)));
+      .finally(() =>
+        callback(userToAuthInfo(authUser, resolvedRole as UserRole)),
+      );
   });
 
   return () => subscription.unsubscribe();
@@ -565,14 +550,12 @@ export function subscribeToPresence(
 
   return () => {
     if (userId) {
-      void supabase
-        .from("presence_status")
-        .upsert({
-          user_id: userId,
-          couple_id: coupleId,
-          state: "offline",
-          last_changed: new Date().toISOString(),
-        });
+      void supabase.from("presence_status").upsert({
+        user_id: userId,
+        couple_id: coupleId,
+        state: "offline",
+        last_changed: new Date().toISOString(),
+      });
     }
     void supabase.removeChannel(channel);
   };

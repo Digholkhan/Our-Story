@@ -30,9 +30,6 @@ The schema script creates `couple-media` as a **Public** bucket because this fro
 ### Email/password
 Enable in `Authentication > Providers > Email`.
 
-### Google login
-Enable in `Authentication > Providers > Google` and set OAuth credentials.
-
 ## 6) Vercel environment variables
 
 Set these in Vercel project settings:
@@ -46,7 +43,7 @@ VITE_SUPABASE_BUCKET=couple-media
 
 Then trigger a new deployment.
 
-## 7) Domain settings for OAuth and email links
+## 7) Domain settings for email links
 
 In Supabase:
 
@@ -55,8 +52,6 @@ In Supabase:
   - `Redirect URLs`: add
     - `https://your-app.vercel.app`
     - `http://localhost:5173`
-
-In Google Cloud OAuth client, add authorized redirect URI from Supabase provider page.
 
 ## 8) Verify
 
