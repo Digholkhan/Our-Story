@@ -54,23 +54,37 @@ import { CoupleProfile, UserRole } from "../types";
 
 // Read Firebase Config from Vite environment variables
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  apiKey: (import.meta.env.VITE_FIREBASE_API_KEY || "").trim(),
+  authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "").trim(),
+  databaseURL: (import.meta.env.VITE_FIREBASE_DATABASE_URL || "").trim(),
+  projectId: (import.meta.env.VITE_FIREBASE_PROJECT_ID || "").trim(),
+  storageBucket: (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "").trim(),
+  messagingSenderId: (
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || ""
+  ).trim(),
+  appId: (import.meta.env.VITE_FIREBASE_APP_ID || "").trim(),
 };
 
-export const configuredCoupleId = import.meta.env.VITE_FIREBASE_COUPLE_ID || "";
+export const configuredCoupleId = (
+  import.meta.env.VITE_FIREBASE_COUPLE_ID || ""
+).trim();
+
+const hasInvalidEnvFormatting = Object.values(firebaseConfig).some((value) =>
+  /[,\r\n]/.test(value),
+);
+const hasRequiredFirebaseConfig =
+  Object.values(firebaseConfig).every(Boolean) && Boolean(configuredCoupleId);
 
 // Check if valid credentials are set
 export const isFirebaseConfigured = Boolean(
-  firebaseConfig.apiKey &&
-  firebaseConfig.apiKey !== "your_api_key_here" &&
-  (firebaseConfig.databaseURL || firebaseConfig.projectId),
+  hasRequiredFirebaseConfig && !hasInvalidEnvFormatting,
 );
+
+if (!isFirebaseConfigured && Object.values(firebaseConfig).some(Boolean)) {
+  console.error(
+    "Firebase is not configured. Check Vercel variable names and remove spaces, commas, and quotes from values; VITE_FIREBASE_DATABASE_URL and VITE_FIREBASE_COUPLE_ID are required.",
+  );
+}
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
@@ -383,6 +397,7 @@ const PRIVATE_COLLECTIONS = new Set([
   "notes",
   "songs",
   "surprises",
+  "guestMessages",
   "chatMessages",
 ]);
 
