@@ -116,24 +116,8 @@ function App() {
 
   // =================== FIREBASE REALTIME SUBSCRIPTIONS ===================
   useEffect(() => {
-    // Seed database with default data if empty
-    StoryStorage.seedFirebaseIfEmpty();
-
-    // 1. Firebase Auth listener
-    const unsubAuth = subscribeToAuth((user) => {
-      setAuthUser(user);
-      if (user) {
-        const newSession: SessionState = {
-          role: user.emailVerified ? user.role : "guest",
-          isLoggedIn: user.emailVerified,
-          activePartner: user.activePartner,
-        };
-        setSession(newSession);
-        StoryStorage.setSession(newSession);
-      }
-    });
-
-    // 2. Realtime Database listeners
+    if (!authUser?.emailVerified || !authUser.coupleId) return;
+    // Couple-scoped realtime listeners start after Firebase Auth resolves.
     const unsubProfile = subscribeToRealtimeNode<CoupleProfile>(
       "profile",
       (val) => {
@@ -235,7 +219,6 @@ function App() {
     );
 
     return () => {
-      unsubAuth();
       unsubProfile();
       unsubAlbums();
       unsubMemories();
@@ -253,6 +236,28 @@ function App() {
       unsubGuestMessages();
       unsubChatMessages();
     };
+  }, [authUser]);
+
+  useEffect(() => {
+    const unsubAuth = subscribeToAuth((user) => {
+      setAuthUser(user);
+      if (user) {
+        const newSession: SessionState = {
+          role: user.emailVerified ? user.role : "guest",
+          isLoggedIn: user.emailVerified,
+          activePartner: user.activePartner,
+        };
+        setSession(newSession);
+        StoryStorage.setSession(newSession);
+      } else {
+        setSession({
+          role: "guest",
+          isLoggedIn: false,
+          activePartner: "partner1",
+        });
+      }
+    });
+    return unsubAuth;
   }, []);
 
   useEffect(() => {
