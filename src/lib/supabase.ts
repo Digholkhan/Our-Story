@@ -198,7 +198,9 @@ export async function signUpWithEmail(
   if (!data.user) throw new Error("Sign up failed.");
 
   setStoredPartnerAssignment(partnerRole, email);
-  await saveUserProfile(data.user, partnerRole);
+  if (data.session) {
+    await saveUserProfile(data.user, partnerRole);
+  }
   return userToAuthInfo(data.user, partnerRole);
 }
 
@@ -386,7 +388,9 @@ export function subscribeToRealtimeNode<T>(
     .catch((err) => console.error(`Failed reading node ${nodePath}:`, err));
 
   const channel = supabase
-    .channel(`couple-nodes-${coupleId}`)
+    .channel(
+      `couple-nodes-${encodeURIComponent(coupleId)}-${encodeURIComponent(nodePath)}`,
+    )
     .on(
       "postgres_changes",
       {

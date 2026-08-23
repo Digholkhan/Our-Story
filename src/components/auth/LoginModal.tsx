@@ -89,11 +89,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         name,
         selectedPartner,
       );
-      onLogin(user.activePartner, user.email || undefined);
-      setSuccessMessage("Account created successfully!");
-      setTimeout(() => {
-        onClose();
-      }, 500);
+      if (user.emailVerified) {
+        onLogin(user.activePartner, user.email || undefined);
+        setSuccessMessage("Account created successfully!");
+        setTimeout(() => onClose(), 500);
+      } else {
+        setSuccessMessage(
+          "Account created. Check your email to verify it, then sign in.",
+        );
+        setMode("signin");
+      }
     } catch (err: any) {
       setError(err.message || "Failed to create account.");
     } finally {
