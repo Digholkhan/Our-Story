@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
-import { X, Upload, Image as ImageIcon, Plus, Globe, Users, Lock, Sparkles } from 'lucide-react';
-import { Album, Memory, VisibilityLevel } from '../../types';
+import {
+  Globe,
+  Image as ImageIcon,
+  Lock,
+  Plus,
+  Sparkles,
+  Upload,
+  Users,
+  X,
+} from "lucide-react";
+import React, { useState } from "react";
+import { Album, Memory, VisibilityLevel } from "../../types";
 
 interface AddMemoryModalProps {
   albums: Album[];
   onClose: () => void;
-  onSaveMemory: (memory: Memory) => void;
+  onSaveMemory: (memory: Memory, imageFile?: File) => void;
   onCreateAlbum: (name: string) => Album;
   activePartner: string;
 }
@@ -17,18 +26,19 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
   onCreateAlbum,
   activePartner,
 }) => {
-  const [title, setTitle] = useState('');
-  const [caption, setCaption] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [location, setLocation] = useState('');
-  const [selectedAlbumId, setSelectedAlbumId] = useState(albums[0]?.id || '');
-  const [newAlbumName, setNewAlbumName] = useState('');
+  const [title, setTitle] = useState("");
+  const [caption, setCaption] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [location, setLocation] = useState("");
+  const [selectedAlbumId, setSelectedAlbumId] = useState(albums[0]?.id || "");
+  const [newAlbumName, setNewAlbumName] = useState("");
   const [isCreatingAlbum, setIsCreatingAlbum] = useState(false);
-  const [visibility, setVisibility] = useState<VisibilityLevel>('PUBLIC');
-  const [tagsInput, setTagsInput] = useState('');
+  const [visibility, setVisibility] = useState<VisibilityLevel>("PUBLIC");
+  const [tagsInput, setTagsInput] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | undefined>();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,6 +49,7 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
       const result = reader.result as string;
       setImageUrl(result);
       setImagePreview(result);
+      setImageFile(file);
     };
     reader.readAsDataURL(file);
   };
@@ -46,7 +57,7 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || (!imageUrl && !imagePreview)) {
-      alert('Please provide a title and photo!');
+      alert("Please provide a title and photo!");
       return;
     }
 
@@ -57,7 +68,7 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
     }
 
     const tags = tagsInput
-      .split(',')
+      .split(",")
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 
@@ -73,10 +84,10 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
       isFavorite,
       visibility,
       author: activePartner,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
-    onSaveMemory(newMem);
+    onSaveMemory(newMem, imageFile);
     onClose();
   };
 
@@ -89,8 +100,12 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-serif text-2xl font-bold gold-gradient-text">Add New Memory 📸</h2>
-              <p className="text-stone-300/70 text-xs">Preserve another special moment in your love story</p>
+              <h2 className="font-serif text-2xl font-bold gold-gradient-text">
+                Add New Memory 📸
+              </h2>
+              <p className="text-stone-300/70 text-xs">
+                Preserve another special moment in your love story
+              </p>
             </div>
           </div>
           <button
@@ -107,25 +122,38 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
             <label className="block text-xs font-semibold uppercase tracking-wider text-rose-300">
               Upload Photo / Image URL *
             </label>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
               {/* File Drag/Drop Box */}
               <label className="border-2 border-dashed border-rose-500/30 hover:border-amber-400/60 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer bg-white/5 hover:bg-white/10 transition-all text-center h-36">
                 <Upload className="w-8 h-8 text-rose-400 mb-2" />
-                <span className="text-xs font-semibold text-stone-200">Click to upload from Device</span>
-                <span className="text-[10px] text-stone-400 mt-1">PNG, JPG, WEBP accepted</span>
-                <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                <span className="text-xs font-semibold text-stone-200">
+                  Click to upload from Device
+                </span>
+                <span className="text-[10px] text-stone-400 mt-1">
+                  PNG, JPG, WEBP accepted
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
               </label>
 
               {/* Preview or URL Input */}
               {imagePreview ? (
                 <div className="relative h-36 rounded-2xl overflow-hidden border border-amber-500/30 group">
-                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
                   <button
                     type="button"
                     onClick={() => {
                       setImagePreview(null);
-                      setImageUrl('');
+                      setImageUrl("");
                     }}
                     className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-rose-600 transition-colors"
                   >
@@ -134,7 +162,9 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <span className="text-xs text-stone-400">Or paste an Image URL:</span>
+                  <span className="text-xs text-stone-400">
+                    Or paste an Image URL:
+                  </span>
                   <div className="relative">
                     <input
                       type="url"
@@ -210,7 +240,11 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
                     className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 focus:border-rose-500 text-sm text-stone-100 outline-none"
                   >
                     {albums.map((alb) => (
-                      <option key={alb.id} value={alb.id} className="bg-burgundy-950 text-white">
+                      <option
+                        key={alb.id}
+                        value={alb.id}
+                        className="bg-burgundy-950 text-white"
+                      >
                         {alb.name}
                       </option>
                     ))}
@@ -268,11 +302,11 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => setVisibility('PUBLIC')}
+                  onClick={() => setVisibility("PUBLIC")}
                   className={`py-2 px-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1 border transition-all ${
-                    visibility === 'PUBLIC'
-                      ? 'bg-emerald-950/80 border-emerald-500 text-emerald-300'
-                      : 'bg-black/40 border-white/10 text-stone-400'
+                    visibility === "PUBLIC"
+                      ? "bg-emerald-950/80 border-emerald-500 text-emerald-300"
+                      : "bg-black/40 border-white/10 text-stone-400"
                   }`}
                 >
                   <Globe className="w-3.5 h-3.5" />
@@ -281,11 +315,11 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => setVisibility('COUPLE_ONLY')}
+                  onClick={() => setVisibility("COUPLE_ONLY")}
                   className={`py-2 px-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1 border transition-all ${
-                    visibility === 'COUPLE_ONLY'
-                      ? 'bg-amber-950/80 border-amber-500 text-amber-300'
-                      : 'bg-black/40 border-white/10 text-stone-400'
+                    visibility === "COUPLE_ONLY"
+                      ? "bg-amber-950/80 border-amber-500 text-amber-300"
+                      : "bg-black/40 border-white/10 text-stone-400"
                   }`}
                 >
                   <Users className="w-3.5 h-3.5" />
@@ -294,11 +328,11 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => setVisibility('PRIVATE')}
+                  onClick={() => setVisibility("PRIVATE")}
                   className={`py-2 px-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1 border transition-all ${
-                    visibility === 'PRIVATE'
-                      ? 'bg-rose-950/80 border-rose-500 text-rose-300'
-                      : 'bg-black/40 border-white/10 text-stone-400'
+                    visibility === "PRIVATE"
+                      ? "bg-rose-950/80 border-rose-500 text-rose-300"
+                      : "bg-black/40 border-white/10 text-stone-400"
                   }`}
                 >
                   <Lock className="w-3.5 h-3.5" />

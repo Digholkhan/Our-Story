@@ -1,6 +1,6 @@
-export type VisibilityLevel = 'PUBLIC' | 'COUPLE_ONLY' | 'PRIVATE';
+export type VisibilityLevel = "PUBLIC" | "COUPLE_ONLY" | "PRIVATE";
 
-export type UserRole = 'guest' | 'partner1' | 'partner2' | 'admin';
+export type UserRole = "guest" | "partner1" | "partner2" | "admin";
 
 export interface CoupleProfile {
   partner1Name: string;
@@ -37,6 +37,11 @@ export interface Memory {
   visibility: VisibilityLevel;
   author: string;
   createdAt: string;
+  storagePath?: string;
+  fileName?: string;
+  fileType?: string;
+  fileSize?: number;
+  createdBy?: string;
 }
 
 export interface TimelineEvent {
@@ -55,8 +60,8 @@ export interface LoveLetter {
   id: string;
   title: string;
   content: string;
-  sender: 'partner1' | 'partner2';
-  recipient: 'partner1' | 'partner2' | 'both';
+  sender: "partner1" | "partner2";
+  recipient: "partner1" | "partner2" | "both";
   date: string;
   unlockDate?: string; // ISO string YYYY-MM-DD or datetime
   imageUrl?: string;
@@ -68,7 +73,13 @@ export interface CalendarEvent {
   id: string;
   title: string;
   date: string; // YYYY-MM-DD
-  category: 'anniversary' | 'birthday' | 'date_night' | 'vacation' | 'family' | 'reminder';
+  category:
+    | "anniversary"
+    | "birthday"
+    | "date_night"
+    | "vacation"
+    | "family"
+    | "reminder";
   description?: string;
   location?: string;
 }
@@ -77,7 +88,14 @@ export interface DateNightIdea {
   id: string;
   title: string;
   description: string;
-  category: 'At Home' | 'Outdoors' | 'Romantic' | 'Cheap' | 'Adventure' | 'Relaxing' | 'Weekend';
+  category:
+    | "At Home"
+    | "Outdoors"
+    | "Romantic"
+    | "Cheap"
+    | "Adventure"
+    | "Relaxing"
+    | "Weekend";
   icon?: string;
 }
 
@@ -85,10 +103,16 @@ export interface CoupleGoal {
   id: string;
   title: string;
   description: string;
-  category: 'Home' | 'Travel' | 'Finance' | 'Relationship' | 'Personal' | 'Adventure';
+  category:
+    | "Home"
+    | "Travel"
+    | "Finance"
+    | "Relationship"
+    | "Personal"
+    | "Adventure";
   targetYear: string;
   progress: number; // 0-100
-  status: 'in_progress' | 'achieved';
+  status: "in_progress" | "achieved";
   imageUrl?: string;
 }
 
@@ -113,7 +137,7 @@ export interface FutureMemory {
 
 export interface LoveReason {
   id: string;
-  author: 'partner1' | 'partner2';
+  author: "partner1" | "partner2";
   reason: string;
   date: string;
   photoUrl?: string;
@@ -133,7 +157,12 @@ export interface SongItem {
   id: string;
   title: string;
   artist: string;
-  category: 'Our Song' | 'Wedding Songs' | 'Travel Songs' | 'Songs We Love' | 'Memories';
+  category:
+    | "Our Song"
+    | "Wedding Songs"
+    | "Travel Songs"
+    | "Songs We Love"
+    | "Memories";
   linkUrl?: string;
   audioPreviewUrl?: string;
   albumCover?: string;
@@ -141,10 +170,15 @@ export interface SongItem {
 
 export interface Surprise {
   id: string;
-  sender: 'partner1' | 'partner2';
-  recipient: 'partner1' | 'partner2';
+  sender: "partner1" | "partner2";
+  recipient: "partner1" | "partner2";
   title: string;
-  surpriseType: 'love_message' | 'photo' | 'letter' | 'date_invitation' | 'memory';
+  surpriseType:
+    | "love_message"
+    | "photo"
+    | "letter"
+    | "date_invitation"
+    | "memory";
   content: string;
   imageUrl?: string;
   unlockDate: string;
@@ -158,14 +192,14 @@ export interface GuestMessage {
   message: string;
   photoUrl?: string;
   date: string;
-  status: 'approved' | 'pending' | 'hidden';
+  status: "approved" | "pending" | "hidden";
   isPinned: boolean;
 }
 
 export interface SessionState {
   role: UserRole;
   isLoggedIn: boolean;
-  activePartner: 'partner1' | 'partner2';
+  activePartner: "partner1" | "partner2";
 }
 
 export interface DailyQuestion {
@@ -177,7 +211,7 @@ export interface DailyQuestion {
 
 export interface ChatMessage {
   id: string;
-  sender: 'partner1' | 'partner2';
+  sender: "partner1" | "partner2";
   text: string;
   photoUrl?: string;
   timestamp: string;

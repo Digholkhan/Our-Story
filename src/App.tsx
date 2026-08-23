@@ -1,71 +1,112 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from "react";
 import {
-  CoupleProfile, Album, Memory, TimelineEvent, LoveLetter,
-  CalendarEvent, DateNightIdea, CoupleGoal, BucketListItem,
-  FutureMemory, LoveReason, SharedNote, SongItem, Surprise,
-  GuestMessage, SessionState, ChatMessage
-} from './types';
-import { StoryStorage } from './lib/storage';
-import {
+  AuthUserInfo,
   subscribeToAuth,
+  subscribeToPresence,
   subscribeToRealtimeNode,
-  AuthUserInfo
-} from './lib/firebase';
+  uploadCoupleFile,
+} from "./lib/firebase";
+import { StoryStorage } from "./lib/storage";
+import {
+  Album,
+  BucketListItem,
+  CalendarEvent,
+  ChatMessage,
+  CoupleGoal,
+  CoupleProfile,
+  DateNightIdea,
+  FutureMemory,
+  GuestMessage,
+  LoveLetter,
+  LoveReason,
+  Memory,
+  SessionState,
+  SharedNote,
+  SongItem,
+  Surprise,
+  TimelineEvent,
+} from "./types";
 
 // UI Components
-import { ParticlesCanvas } from './components/ui/ParticlesCanvas';
-import { Navbar } from './components/ui/Navbar';
-import { AmbientAudioPlayer } from './components/ui/AmbientAudioPlayer';
+import { AmbientAudioPlayer } from "./components/ui/AmbientAudioPlayer";
+import { Navbar } from "./components/ui/Navbar";
+import { ParticlesCanvas } from "./components/ui/ParticlesCanvas";
 
 // Page Components
-import { LandingPage } from './components/landing/LandingPage';
-import { MemoriesGallery } from './components/memory/MemoriesGallery';
-import { AddMemoryModal } from './components/memory/AddMemoryModal';
-import { TimelineView } from './components/timeline/TimelineView';
-import { WeddingDayShowcase } from './components/wedding-day/WeddingDayShowcase';
-import { ReplaySlideshowModal } from './components/wedding-day/ReplaySlideshowModal';
-import { GuestMessageWall } from './components/messages/GuestMessageWall';
-import { AddGuestMessageModal } from './components/messages/AddGuestMessageModal';
-import { LoveLettersView } from './components/letters/LoveLettersView';
-import { WriteLetterModal } from './components/letters/WriteLetterModal';
-import { CoupleCalendarView } from './components/calendar/CoupleCalendarView';
-import { DateNightGenerator } from './components/date-night/DateNightGenerator';
-import { CoupleGoalsView } from './components/goals/CoupleGoalsView';
-import { BucketListView } from './components/bucket-list/BucketListView';
-import { LoveReasonsView } from './components/love-reasons/LoveReasonsView';
-import { SharedNotesView } from './components/notes/SharedNotesView';
-import { PlaylistView } from './components/playlist/PlaylistView';
-import { SurprisesView } from './components/surprises/SurprisesView';
-import { Dashboard } from './components/dashboard/Dashboard';
-import { CoupleChatView } from './components/chat/CoupleChatView';
+import { BucketListView } from "./components/bucket-list/BucketListView";
+import { CoupleCalendarView } from "./components/calendar/CoupleCalendarView";
+import { CoupleChatView } from "./components/chat/CoupleChatView";
+import { Dashboard } from "./components/dashboard/Dashboard";
+import { DateNightGenerator } from "./components/date-night/DateNightGenerator";
+import { CoupleGoalsView } from "./components/goals/CoupleGoalsView";
+import { LandingPage } from "./components/landing/LandingPage";
+import { LoveLettersView } from "./components/letters/LoveLettersView";
+import { WriteLetterModal } from "./components/letters/WriteLetterModal";
+import { LoveReasonsView } from "./components/love-reasons/LoveReasonsView";
+import { AddMemoryModal } from "./components/memory/AddMemoryModal";
+import { MemoriesGallery } from "./components/memory/MemoriesGallery";
+import { AddGuestMessageModal } from "./components/messages/AddGuestMessageModal";
+import { GuestMessageWall } from "./components/messages/GuestMessageWall";
+import { SharedNotesView } from "./components/notes/SharedNotesView";
+import { PlaylistView } from "./components/playlist/PlaylistView";
+import { SurprisesView } from "./components/surprises/SurprisesView";
+import { TimelineView } from "./components/timeline/TimelineView";
+import { ReplaySlideshowModal } from "./components/wedding-day/ReplaySlideshowModal";
+import { WeddingDayShowcase } from "./components/wedding-day/WeddingDayShowcase";
 
 // Auth & Admin
-import { LoginModal } from './components/auth/LoginModal';
-import { AdminSetupModal } from './components/admin/AdminSetupModal';
+import { AdminSetupModal } from "./components/admin/AdminSetupModal";
+import { LoginModal } from "./components/auth/LoginModal";
 
 function App() {
   // =================== STATE ===================
-  const [profile, setProfile] = useState<CoupleProfile>(StoryStorage.getProfile());
+  const [profile, setProfile] = useState<CoupleProfile>(
+    StoryStorage.getProfile(),
+  );
   const [albums, setAlbums] = useState<Album[]>(StoryStorage.getAlbums());
-  const [memories, setMemories] = useState<Memory[]>(StoryStorage.getMemories());
-  const [timeline, setTimeline] = useState<TimelineEvent[]>(StoryStorage.getTimeline());
-  const [letters, setLetters] = useState<LoveLetter[]>(StoryStorage.getLetters());
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(StoryStorage.getCalendar());
-  const [dateIdeas, setDateIdeas] = useState<DateNightIdea[]>(StoryStorage.getDateIdeas());
+  const [memories, setMemories] = useState<Memory[]>(
+    StoryStorage.getMemories(),
+  );
+  const [timeline, setTimeline] = useState<TimelineEvent[]>(
+    StoryStorage.getTimeline(),
+  );
+  const [letters, setLetters] = useState<LoveLetter[]>(
+    StoryStorage.getLetters(),
+  );
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(
+    StoryStorage.getCalendar(),
+  );
+  const [dateIdeas, setDateIdeas] = useState<DateNightIdea[]>(
+    StoryStorage.getDateIdeas(),
+  );
   const [goals, setGoals] = useState<CoupleGoal[]>(StoryStorage.getGoals());
-  const [bucketList, setBucketList] = useState<BucketListItem[]>(StoryStorage.getBucketList());
-  const [futureMemories, setFutureMemories] = useState<FutureMemory[]>(StoryStorage.getFutureMemories());
-  const [loveReasons, setLoveReasons] = useState<LoveReason[]>(StoryStorage.getLoveReasons());
+  const [bucketList, setBucketList] = useState<BucketListItem[]>(
+    StoryStorage.getBucketList(),
+  );
+  const [futureMemories, setFutureMemories] = useState<FutureMemory[]>(
+    StoryStorage.getFutureMemories(),
+  );
+  const [loveReasons, setLoveReasons] = useState<LoveReason[]>(
+    StoryStorage.getLoveReasons(),
+  );
   const [notes, setNotes] = useState<SharedNote[]>(StoryStorage.getNotes());
   const [songs, setSongs] = useState<SongItem[]>(StoryStorage.getSongs());
-  const [surprises, setSurprises] = useState<Surprise[]>(StoryStorage.getSurprises());
-  const [guestMessages, setGuestMessages] = useState<GuestMessage[]>(StoryStorage.getGuestMessages());
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(StoryStorage.getChatMessages());
-  const [session, setSession] = useState<SessionState>(StoryStorage.getSession());
+  const [surprises, setSurprises] = useState<Surprise[]>(
+    StoryStorage.getSurprises(),
+  );
+  const [guestMessages, setGuestMessages] = useState<GuestMessage[]>(
+    StoryStorage.getGuestMessages(),
+  );
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(
+    StoryStorage.getChatMessages(),
+  );
+  const [session, setSession] = useState<SessionState>(
+    StoryStorage.getSession(),
+  );
   const [authUser, setAuthUser] = useState<AuthUserInfo | null>(null);
 
   // UI State
-  const [activeTab, setActiveTab] = useState<string>('landing');
+  const [activeTab, setActiveTab] = useState<string>("landing");
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showAddMemoryModal, setShowAddMemoryModal] = useState(false);
@@ -83,9 +124,9 @@ function App() {
       setAuthUser(user);
       if (user) {
         const newSession: SessionState = {
-          role: user.role,
-          isLoggedIn: true,
-          activePartner: user.activePartner
+          role: user.emailVerified ? user.role : "guest",
+          isLoggedIn: user.emailVerified,
+          activePartner: user.activePartner,
         };
         setSession(newSession);
         StoryStorage.setSession(newSession);
@@ -93,69 +134,105 @@ function App() {
     });
 
     // 2. Realtime Database listeners
-    const unsubProfile = subscribeToRealtimeNode<CoupleProfile>('profile', (val) => {
-      if (val) setProfile(val);
-    });
+    const unsubProfile = subscribeToRealtimeNode<CoupleProfile>(
+      "profile",
+      (val) => {
+        if (val) setProfile(val);
+      },
+    );
 
-    const unsubAlbums = subscribeToRealtimeNode<Album[]>('albums', (val) => {
+    const unsubAlbums = subscribeToRealtimeNode<Album[]>("albums", (val) => {
       if (val) setAlbums(val);
     });
 
-    const unsubMemories = subscribeToRealtimeNode<Memory[]>('memories', (val) => {
-      if (val) setMemories(val);
-    });
+    const unsubMemories = subscribeToRealtimeNode<Memory[]>(
+      "memories",
+      (val) => {
+        if (val) setMemories(val);
+      },
+    );
 
-    const unsubTimeline = subscribeToRealtimeNode<TimelineEvent[]>('timeline', (val) => {
-      if (val) setTimeline(val);
-    });
+    const unsubTimeline = subscribeToRealtimeNode<TimelineEvent[]>(
+      "timeline",
+      (val) => {
+        if (val) setTimeline(val);
+      },
+    );
 
-    const unsubLetters = subscribeToRealtimeNode<LoveLetter[]>('letters', (val) => {
-      if (val) setLetters(val);
-    });
+    const unsubLetters = subscribeToRealtimeNode<LoveLetter[]>(
+      "letters",
+      (val) => {
+        if (val) setLetters(val);
+      },
+    );
 
-    const unsubCalendar = subscribeToRealtimeNode<CalendarEvent[]>('calendarEvents', (val) => {
-      if (val) setCalendarEvents(val);
-    });
+    const unsubCalendar = subscribeToRealtimeNode<CalendarEvent[]>(
+      "calendarEvents",
+      (val) => {
+        if (val) setCalendarEvents(val);
+      },
+    );
 
-    const unsubDateIdeas = subscribeToRealtimeNode<DateNightIdea[]>('dateIdeas', (val) => {
-      if (val) setDateIdeas(val);
-    });
+    const unsubDateIdeas = subscribeToRealtimeNode<DateNightIdea[]>(
+      "dateIdeas",
+      (val) => {
+        if (val) setDateIdeas(val);
+      },
+    );
 
-    const unsubGoals = subscribeToRealtimeNode<CoupleGoal[]>('goals', (val) => {
+    const unsubGoals = subscribeToRealtimeNode<CoupleGoal[]>("goals", (val) => {
       if (val) setGoals(val);
     });
 
-    const unsubBucketList = subscribeToRealtimeNode<BucketListItem[]>('bucketList', (val) => {
-      if (val) setBucketList(val);
-    });
+    const unsubBucketList = subscribeToRealtimeNode<BucketListItem[]>(
+      "bucketList",
+      (val) => {
+        if (val) setBucketList(val);
+      },
+    );
 
-    const unsubFutureMemories = subscribeToRealtimeNode<FutureMemory[]>('futureMemories', (val) => {
-      if (val) setFutureMemories(val);
-    });
+    const unsubFutureMemories = subscribeToRealtimeNode<FutureMemory[]>(
+      "futureMemories",
+      (val) => {
+        if (val) setFutureMemories(val);
+      },
+    );
 
-    const unsubLoveReasons = subscribeToRealtimeNode<LoveReason[]>('loveReasons', (val) => {
-      if (val) setLoveReasons(val);
-    });
+    const unsubLoveReasons = subscribeToRealtimeNode<LoveReason[]>(
+      "loveReasons",
+      (val) => {
+        if (val) setLoveReasons(val);
+      },
+    );
 
-    const unsubNotes = subscribeToRealtimeNode<SharedNote[]>('notes', (val) => {
+    const unsubNotes = subscribeToRealtimeNode<SharedNote[]>("notes", (val) => {
       if (val) setNotes(val);
     });
 
-    const unsubSongs = subscribeToRealtimeNode<SongItem[]>('songs', (val) => {
+    const unsubSongs = subscribeToRealtimeNode<SongItem[]>("songs", (val) => {
       if (val) setSongs(val);
     });
 
-    const unsubSurprises = subscribeToRealtimeNode<Surprise[]>('surprises', (val) => {
-      if (val) setSurprises(val);
-    });
+    const unsubSurprises = subscribeToRealtimeNode<Surprise[]>(
+      "surprises",
+      (val) => {
+        if (val) setSurprises(val);
+      },
+    );
 
-    const unsubGuestMessages = subscribeToRealtimeNode<GuestMessage[]>('guestMessages', (val) => {
-      if (val) setGuestMessages(val);
-    });
+    const unsubGuestMessages = subscribeToRealtimeNode<GuestMessage[]>(
+      "guestMessages",
+      (val) => {
+        if (val) setGuestMessages(val);
+      },
+    );
 
-    const unsubChatMessages = subscribeToRealtimeNode<ChatMessage[]>('chatMessages', (val) => {
-      if (val) setChatMessages(val);
-    });
+    const unsubChatMessages = subscribeToRealtimeNode<ChatMessage[]>(
+      "chatMessages",
+      (val) => {
+        if (val) setChatMessages(val);
+      },
+    );
 
     return () => {
       unsubAuth();
@@ -178,29 +255,37 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!authUser?.emailVerified || !authUser.coupleId) return;
+    return subscribeToPresence(authUser.coupleId, () => {});
+  }, [authUser]);
+
   // =================== HANDLERS ===================
 
   // Auth
-  const handleLogin = useCallback((partner: 'partner1' | 'partner2', _email?: string) => {
-    const newSession: SessionState = {
-      role: partner === 'partner1' ? 'partner1' : 'partner2',
-      isLoggedIn: true,
-      activePartner: partner,
-    };
-    setSession(newSession);
-    StoryStorage.setSession(newSession);
-  }, []);
+  const handleLogin = useCallback(
+    (partner: "partner1" | "partner2", _email?: string) => {
+      const newSession: SessionState = {
+        role: partner === "partner1" ? "partner1" : "partner2",
+        isLoggedIn: true,
+        activePartner: partner,
+      };
+      setSession(newSession);
+      StoryStorage.setSession(newSession);
+    },
+    [],
+  );
 
   const handleLogout = useCallback(() => {
     const newSession: SessionState = {
-      role: 'guest',
+      role: "guest",
       isLoggedIn: false,
-      activePartner: 'partner1',
+      activePartner: "partner1",
     };
     setSession(newSession);
     setAuthUser(null);
     StoryStorage.setSession(newSession);
-    setActiveTab('landing');
+    setActiveTab("landing");
   }, []);
 
   // Profile
@@ -210,36 +295,58 @@ function App() {
   }, []);
 
   // Memories
-  const handleSaveMemory = useCallback((mem: Memory) => {
-    StoryStorage.saveMemory(mem);
-    setMemories(StoryStorage.getMemories());
-  }, []);
+  const handleSaveMemory = useCallback(
+    async (mem: Memory, imageFile?: File) => {
+      try {
+        const savedMemory = imageFile
+          ? {
+              ...mem,
+              ...(await uploadCoupleFile(`memories/${mem.id}`, imageFile)),
+            }
+          : mem;
+        StoryStorage.saveMemory(savedMemory);
+        setMemories(StoryStorage.getMemories());
+      } catch (error) {
+        console.error("Unable to save memory:", error);
+        alert(
+          error instanceof Error ? error.message : "Unable to save memory.",
+        );
+      }
+    },
+    [],
+  );
 
   const handleDeleteMemory = useCallback((id: string) => {
     StoryStorage.deleteMemory(id);
     setMemories(StoryStorage.getMemories());
   }, []);
 
-  const handleToggleFavorite = useCallback((id: string) => {
-    const mem = memories.find((m) => m.id === id);
-    if (!mem) return;
-    const updated = { ...mem, isFavorite: !mem.isFavorite };
-    StoryStorage.saveMemory(updated);
-    setMemories(StoryStorage.getMemories());
-  }, [memories]);
+  const handleToggleFavorite = useCallback(
+    (id: string) => {
+      const mem = memories.find((m) => m.id === id);
+      if (!mem) return;
+      const updated = { ...mem, isFavorite: !mem.isFavorite };
+      StoryStorage.saveMemory(updated);
+      setMemories(StoryStorage.getMemories());
+    },
+    [memories],
+  );
 
   // Albums
-  const handleCreateAlbum = useCallback((name: string, description?: string): Album => {
-    const newAlbum: Album = {
-      id: `alb-${Date.now()}`,
-      name,
-      description,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    StoryStorage.saveAlbum(newAlbum);
-    setAlbums(StoryStorage.getAlbums());
-    return newAlbum;
-  }, []);
+  const handleCreateAlbum = useCallback(
+    (name: string, description?: string): Album => {
+      const newAlbum: Album = {
+        id: `alb-${Date.now()}`,
+        name,
+        description,
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+      StoryStorage.saveAlbum(newAlbum);
+      setAlbums(StoryStorage.getAlbums());
+      return newAlbum;
+    },
+    [],
+  );
 
   const handleDeleteAlbum = useCallback((id: string) => {
     StoryStorage.deleteAlbum(id);
@@ -307,25 +414,32 @@ function App() {
     setBucketList(StoryStorage.getBucketList());
   }, []);
 
-  const handleConvertBucketToMemory = useCallback((item: BucketListItem) => {
-    if (!item.memoryPhotoUrl) return;
-    const newMemory: Memory = {
-      id: `mem-bl-${Date.now()}`,
-      title: `✓ Bucket List: ${item.title}`,
-      caption: item.note || `We checked off "${item.title}" from our bucket list!`,
-      imageUrl: item.memoryPhotoUrl,
-      date: item.completedDate || new Date().toISOString().split('T')[0],
-      location: '',
-      albumId: 'alb-4',
-      tags: ['Bucket List', 'Achievement'],
-      isFavorite: false,
-      visibility: 'COUPLE_ONLY',
-      author: session.activePartner === 'partner1' ? profile.partner1Name : profile.partner2Name,
-      createdAt: new Date().toISOString(),
-    };
-    StoryStorage.saveMemory(newMemory);
-    setMemories(StoryStorage.getMemories());
-  }, [session, profile]);
+  const handleConvertBucketToMemory = useCallback(
+    (item: BucketListItem) => {
+      if (!item.memoryPhotoUrl) return;
+      const newMemory: Memory = {
+        id: `mem-bl-${Date.now()}`,
+        title: `✓ Bucket List: ${item.title}`,
+        caption:
+          item.note || `We checked off "${item.title}" from our bucket list!`,
+        imageUrl: item.memoryPhotoUrl,
+        date: item.completedDate || new Date().toISOString().split("T")[0],
+        location: "",
+        albumId: "alb-4",
+        tags: ["Bucket List", "Achievement"],
+        isFavorite: false,
+        visibility: "COUPLE_ONLY",
+        author:
+          session.activePartner === "partner1"
+            ? profile.partner1Name
+            : profile.partner2Name,
+        createdAt: new Date().toISOString(),
+      };
+      StoryStorage.saveMemory(newMemory);
+      setMemories(StoryStorage.getMemories());
+    },
+    [session, profile],
+  );
 
   // Love Reasons
   const handleSaveLoveReason = useCallback((reason: LoveReason) => {
@@ -388,14 +502,17 @@ function App() {
     setChatMessages(StoryStorage.getChatMessages());
   }, []);
 
-  const handleAddChatReaction = useCallback((msgId: string, emoji: string) => {
-    const msg = chatMessages.find(m => m.id === msgId);
-    if (msg) {
-      const updated = { ...msg, reaction: emoji };
-      StoryStorage.saveChatMessage(updated);
-      setChatMessages(StoryStorage.getChatMessages());
-    }
-  }, [chatMessages]);
+  const handleAddChatReaction = useCallback(
+    (msgId: string, emoji: string) => {
+      const msg = chatMessages.find((m) => m.id === msgId);
+      if (msg) {
+        const updated = { ...msg, reaction: emoji };
+        StoryStorage.saveChatMessage(updated);
+        setChatMessages(StoryStorage.getChatMessages());
+      }
+    },
+    [chatMessages],
+  );
 
   // Admin Reset
   const handleResetData = useCallback(() => {
@@ -419,26 +536,28 @@ function App() {
   }, []);
 
   // Wedding memories filter for slideshow
-  const weddingMemories = memories.filter((m) => m.albumId === 'alb-wedding-day' || m.tags.includes('Wedding'));
+  const weddingMemories = memories.filter(
+    (m) => m.albumId === "alb-wedding-day" || m.tags.includes("Wedding"),
+  );
 
   // Render view router
   const renderActiveView = () => {
     switch (activeTab) {
-      case 'landing':
+      case "landing":
         return (
           <LandingPage
             profile={profile}
             timeline={timeline}
             memories={memories}
             guestMessages={guestMessages}
-            onEnterStory={() => setActiveTab('timeline')}
+            onEnterStory={() => setActiveTab("timeline")}
             onOpenReplay={() => setShowReplaySlideshow(true)}
             onSelectTab={(tab: string) => setActiveTab(tab)}
             onOpenAddMessage={() => setShowAddMessageModal(true)}
           />
         );
 
-      case 'timeline':
+      case "timeline":
         return (
           <TimelineView
             timeline={timeline}
@@ -448,7 +567,7 @@ function App() {
           />
         );
 
-      case 'memories':
+      case "memories":
         return (
           <MemoriesGallery
             albums={albums}
@@ -463,7 +582,7 @@ function App() {
           />
         );
 
-      case 'messages':
+      case "messages":
         return (
           <GuestMessageWall
             messages={guestMessages}
@@ -471,12 +590,14 @@ function App() {
             onOpenAddModal={() => setShowAddMessageModal(true)}
             onTogglePinMessage={(id: string) => {
               const msg = guestMessages.find((m) => m.id === id);
-              if (msg) handleSaveGuestMessage({ ...msg, isPinned: !msg.isPinned });
+              if (msg)
+                handleSaveGuestMessage({ ...msg, isPinned: !msg.isPinned });
             }}
             onToggleHideMessage={(id: string) => {
               const msg = guestMessages.find((m) => m.id === id);
               if (msg) {
-                const nextStatus = msg.status === 'hidden' ? 'approved' : 'hidden';
+                const nextStatus =
+                  msg.status === "hidden" ? "approved" : "hidden";
                 handleSaveGuestMessage({ ...msg, status: nextStatus });
               }
             }}
@@ -484,7 +605,7 @@ function App() {
           />
         );
 
-      case 'wedding-day':
+      case "wedding-day":
         return (
           <WeddingDayShowcase
             profile={profile}
@@ -494,7 +615,7 @@ function App() {
           />
         );
 
-      case 'dashboard':
+      case "dashboard":
         return session.isLoggedIn ? (
           <Dashboard
             profile={profile}
@@ -512,7 +633,7 @@ function App() {
           />
         ) : null;
 
-      case 'chat':
+      case "chat":
         return session.isLoggedIn ? (
           <CoupleChatView
             messages={chatMessages}
@@ -524,7 +645,7 @@ function App() {
           />
         ) : null;
 
-      case 'letters':
+      case "letters":
         return session.isLoggedIn ? (
           <LoveLettersView
             letters={letters}
@@ -534,7 +655,7 @@ function App() {
           />
         ) : null;
 
-      case 'calendar':
+      case "calendar":
         return session.isLoggedIn ? (
           <CoupleCalendarView
             events={calendarEvents}
@@ -544,7 +665,7 @@ function App() {
           />
         ) : null;
 
-      case 'date-ideas':
+      case "date-ideas":
         return session.isLoggedIn ? (
           <DateNightGenerator
             ideas={dateIdeas}
@@ -555,14 +676,17 @@ function App() {
                 id: `mem-date-${Date.now()}`,
                 title: `Date Night: ${idea.title}`,
                 caption: idea.description,
-                imageUrl: '/hero-wedding.jpg',
-                date: new Date().toISOString().split('T')[0],
-                location: '',
-                albumId: 'alb-3',
-                tags: ['Date Night', idea.category],
+                imageUrl: "/hero-wedding.jpg",
+                date: new Date().toISOString().split("T")[0],
+                location: "",
+                albumId: "alb-3",
+                tags: ["Date Night", idea.category],
                 isFavorite: false,
-                visibility: 'COUPLE_ONLY',
-                author: session.activePartner === 'partner1' ? profile.partner1Name : profile.partner2Name,
+                visibility: "COUPLE_ONLY",
+                author:
+                  session.activePartner === "partner1"
+                    ? profile.partner1Name
+                    : profile.partner2Name,
                 createdAt: new Date().toISOString(),
               };
               handleSaveMemory(newMemory);
@@ -570,7 +694,7 @@ function App() {
           />
         ) : null;
 
-      case 'goals':
+      case "goals":
         return session.isLoggedIn ? (
           <CoupleGoalsView
             goals={goals}
@@ -580,7 +704,7 @@ function App() {
           />
         ) : null;
 
-      case 'bucket-list':
+      case "bucket-list":
         return session.isLoggedIn ? (
           <BucketListView
             bucketList={bucketList}
@@ -591,7 +715,7 @@ function App() {
           />
         ) : null;
 
-      case 'love-reasons':
+      case "love-reasons":
         return session.isLoggedIn ? (
           <LoveReasonsView
             reasons={loveReasons}
@@ -602,7 +726,7 @@ function App() {
           />
         ) : null;
 
-      case 'notes':
+      case "notes":
         return session.isLoggedIn ? (
           <SharedNotesView
             notes={notes}
@@ -612,7 +736,7 @@ function App() {
           />
         ) : null;
 
-      case 'playlist':
+      case "playlist":
         return session.isLoggedIn ? (
           <PlaylistView
             songs={songs}
@@ -622,7 +746,7 @@ function App() {
           />
         ) : null;
 
-      case 'surprises':
+      case "surprises":
         return session.isLoggedIn ? (
           <SurprisesView
             surprises={surprises}
@@ -657,9 +781,7 @@ function App() {
       />
 
       {/* Main Content Area */}
-      <main className="relative z-10">
-        {renderActiveView()}
-      </main>
+      <main className="relative z-10">{renderActiveView()}</main>
 
       {/* ========== MODALS ========== */}
 
@@ -674,7 +796,7 @@ function App() {
         />
       )}
 
-      {showAdminModal && (
+      {showAdminModal && session.isLoggedIn && (
         <AdminSetupModal
           profile={profile}
           onClose={() => setShowAdminModal(false)}
@@ -689,7 +811,11 @@ function App() {
           onClose={() => setShowAddMemoryModal(false)}
           onSaveMemory={handleSaveMemory}
           onCreateAlbum={(name: string) => handleCreateAlbum(name)}
-          activePartner={session.activePartner === 'partner1' ? profile.partner1Name : profile.partner2Name}
+          activePartner={
+            session.activePartner === "partner1"
+              ? profile.partner1Name
+              : profile.partner2Name
+          }
         />
       )}
 

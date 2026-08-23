@@ -1,0 +1,13 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "status": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || (data.child('coupleId').exists() && root.child('status').child(auth.uid).child('coupleId').val() == data.child('coupleId').val()))",
+        ".write": "auth != null && auth.uid == $uid",
+        ".validate": "newData.hasChildren(['state', 'coupleId', 'lastChanged']) && newData.child('state').val().matches(/^(online|offline)$/)"
+      }
+    }
+  }
+}

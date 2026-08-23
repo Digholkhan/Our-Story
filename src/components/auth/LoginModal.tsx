@@ -1,25 +1,39 @@
-import React, { useState } from 'react';
-import { X, Key, LogOut, UserCheck, Mail, Lock, User, CheckCircle2, AlertCircle, ArrowRight, RefreshCw } from 'lucide-react';
-import { SessionState, CoupleProfile } from '../../types';
 import {
-  signUpWithEmail,
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Key,
+  Lock,
+  LogOut,
+  Mail,
+  RefreshCw,
+  User,
+  UserCheck,
+  X,
+} from "lucide-react";
+import React, { useState } from "react";
+import {
+  AuthUserInfo,
+  logoutFirebaseUser,
+  refreshAuthUser,
+  resendVerificationEmail,
+  resetPasswordEmail,
   signInWithEmail,
   signInWithGoogle,
-  resetPasswordEmail,
-  logoutFirebaseUser,
-  AuthUserInfo
-} from '../../lib/firebase';
+  signUpWithEmail,
+} from "../../lib/firebase";
+import { CoupleProfile, SessionState } from "../../types";
 
 interface LoginModalProps {
   profile: CoupleProfile;
   session: SessionState;
   onClose: () => void;
-  onLogin: (partner: 'partner1' | 'partner2', email?: string) => void;
+  onLogin: (partner: "partner1" | "partner2", email?: string) => void;
   onLogout: () => void;
   authUser?: AuthUserInfo | null;
 }
 
-type AuthMode = 'signin' | 'signup' | 'reset';
+type AuthMode = "signin" | "signup" | "reset";
 
 export const LoginModal: React.FC<LoginModalProps> = ({
   profile,
@@ -27,20 +41,22 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onClose,
   onLogin,
   onLogout,
-  authUser
+  authUser,
 }) => {
-  const [mode, setMode] = useState<AuthMode>('signin');
-  const [selectedPartner, setSelectedPartner] = useState<'partner1' | 'partner2'>('partner1');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [mode, setMode] = useState<AuthMode>("signin");
+  const [selectedPartner, setSelectedPartner] = useState<
+    "partner1" | "partner2"
+  >("partner1");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const clearMessages = () => {
-    setError('');
-    setSuccessMessage('');
+    setError("");
+    setSuccessMessage("");
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -50,12 +66,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     try {
       const user = await signInWithEmail(email, password, selectedPartner);
       onLogin(user.activePartner, user.email || undefined);
-      setSuccessMessage('Successfully signed in!');
+      setSuccessMessage("Successfully signed in!");
       setTimeout(() => {
         onClose();
       }, 500);
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in. Please check your credentials.');
+      setError(
+        err.message || "Failed to sign in. Please check your credentials.",
+      );
     } finally {
       setLoading(false);
     }
@@ -66,14 +84,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     clearMessages();
     setLoading(true);
     try {
-      const user = await signUpWithEmail(email, password, name, selectedPartner);
+      const user = await signUpWithEmail(
+        email,
+        password,
+        name,
+        selectedPartner,
+      );
       onLogin(user.activePartner, user.email || undefined);
-      setSuccessMessage('Account created successfully!');
+      setSuccessMessage("Account created successfully!");
       setTimeout(() => {
         onClose();
       }, 500);
     } catch (err: any) {
-      setError(err.message || 'Failed to create account.');
+      setError(err.message || "Failed to create account.");
     } finally {
       setLoading(false);
     }
@@ -85,12 +108,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     try {
       const user = await signInWithGoogle(selectedPartner);
       onLogin(user.activePartner, user.email || undefined);
-      setSuccessMessage('Signed in with Gmail successfully!');
+      setSuccessMessage("Signed in with Gmail successfully!");
       setTimeout(() => {
         onClose();
       }, 500);
     } catch (err: any) {
-      setError(err.message || 'Gmail Authentication failed.');
+      setError(err.message || "Gmail Authentication failed.");
     } finally {
       setLoading(false);
     }
@@ -102,9 +125,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setLoading(true);
     try {
       await resetPasswordEmail(email);
-      setSuccessMessage(`Password reset link sent to ${email}. Please check your Gmail/Email inbox!`);
+      setSuccessMessage(
+        `Password reset link sent to ${email}. Please check your Gmail/Email inbox!`,
+      );
     } catch (err: any) {
-      setError(err.message || 'Failed to send password reset email.');
+      setError(err.message || "Failed to send password reset email.");
     } finally {
       setLoading(false);
     }
@@ -114,17 +139,48 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     try {
       await logoutFirebaseUser();
     } catch (err) {
-      console.warn('Firebase logout error:', err);
+      console.warn("Firebase logout error:", err);
     }
     onLogout();
     onClose();
   };
 
+  const handleResendVerification = async () => {
+    clearMessages();
+    try {
+      await resendVerificationEmail();
+      setSuccessMessage("Verification email sent. Please check your inbox.");
+    } catch (err: any) {
+      setError(err.message || "Unable to resend verification email.");
+    }
+  };
+
+  const handleRefreshVerification = async () => {
+    clearMessages();
+    try {
+      const refreshed = await refreshAuthUser();
+      if (refreshed?.emailVerified)
+        setSuccessMessage("Email verified. Couple Space is now unlocked.");
+      else
+        setError(
+          "Your email is not verified yet. Open the verification email, then try again.",
+        );
+    } catch (err: any) {
+      setError(err.message || "Unable to refresh verification status.");
+    }
+  };
+
   // LOGGED IN STATE
   if (session.isLoggedIn || authUser) {
-    const currentEmail = authUser?.email || 'Logged In';
-    const activeAvatar = session.activePartner === 'partner1' ? profile.partner1Avatar : profile.partner2Avatar;
-    const activeName = session.activePartner === 'partner1' ? profile.partner1Name : profile.partner2Name;
+    const currentEmail = authUser?.email || "Logged In";
+    const activeAvatar =
+      session.activePartner === "partner1"
+        ? profile.partner1Avatar
+        : profile.partner2Avatar;
+    const activeName =
+      session.activePartner === "partner1"
+        ? profile.partner1Name
+        : profile.partner2Name;
 
     return (
       <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
@@ -132,9 +188,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <div className="flex items-center justify-between border-b border-stone-100 pb-4">
             <div className="flex items-center gap-2">
               <UserCheck className="w-5 h-5 text-emerald-600" />
-              <h3 className="font-serif text-2xl font-bold text-stone-900">Account & Session</h3>
+              <h3 className="font-serif text-2xl font-bold text-stone-900">
+                Account & Session
+              </h3>
             </div>
-            <button onClick={onClose} className="p-2 rounded-full hover:bg-stone-100 text-stone-400">
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-stone-100 text-stone-400"
+            >
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -157,8 +218,35 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 📧 {currentEmail}
               </p>
               <span className="inline-block mt-2 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-xs text-emerald-700 font-medium">
-                ● Live Realtime Database Connected
+                ● Live Firebase Connected
               </span>
+              {authUser &&
+                authUser.provider === "password" &&
+                !authUser.emailVerified && (
+                  <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-2xl text-left space-y-2">
+                    <p className="text-xs font-semibold text-amber-900">
+                      Please verify your email
+                    </p>
+                    <p className="text-[11px] text-amber-800">
+                      Private couple features stay locked until verification is
+                      complete.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleResendVerification}
+                        className="text-[11px] text-rose-700 font-semibold hover:underline"
+                      >
+                        Resend email
+                      </button>
+                      <button
+                        onClick={handleRefreshVerification}
+                        className="text-[11px] text-stone-700 font-semibold hover:underline"
+                      >
+                        Refresh status
+                      </button>
+                    </div>
+                  </div>
+                )}
             </div>
 
             {/* Switch Active Partner */}
@@ -168,24 +256,24 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => onLogin('partner1', currentEmail)}
+                  onClick={() => onLogin("partner1", currentEmail)}
                   className={`p-3 rounded-2xl text-xs font-semibold border transition-all flex items-center justify-center gap-2 ${
-                    session.activePartner === 'partner1'
-                      ? 'bg-rose-700 border-rose-700 text-white shadow-sm'
-                      : 'bg-white border-stone-200 text-stone-700 hover:border-stone-300'
+                    session.activePartner === "partner1"
+                      ? "bg-rose-700 border-rose-700 text-white shadow-sm"
+                      : "bg-white border-stone-200 text-stone-700 hover:border-stone-300"
                   }`}
                 >
-                  <span>{profile.partner1Name.split(' ')[0]}</span>
+                  <span>{profile.partner1Name.split(" ")[0]}</span>
                 </button>
                 <button
-                  onClick={() => onLogin('partner2', currentEmail)}
+                  onClick={() => onLogin("partner2", currentEmail)}
                   className={`p-3 rounded-2xl text-xs font-semibold border transition-all flex items-center justify-center gap-2 ${
-                    session.activePartner === 'partner2'
-                      ? 'bg-rose-700 border-rose-700 text-white shadow-sm'
-                      : 'bg-white border-stone-200 text-stone-700 hover:border-stone-300'
+                    session.activePartner === "partner2"
+                      ? "bg-rose-700 border-rose-700 text-white shadow-sm"
+                      : "bg-white border-stone-200 text-stone-700 hover:border-stone-300"
                   }`}
                 >
-                  <span>{profile.partner2Name.split(' ')[0]}</span>
+                  <span>{profile.partner2Name.split(" ")[0]}</span>
                 </button>
               </div>
             </div>
@@ -211,14 +299,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <Key className="w-5 h-5 text-rose-600" />
             <div>
               <h3 className="font-serif text-2xl font-bold text-stone-900">
-                {mode === 'signin' && 'Welcome Back ❤️'}
-                {mode === 'signup' && 'Create Account ✨'}
-                {mode === 'reset' && 'Reset Password 🔒'}
+                {mode === "signin" && "Welcome Back ❤️"}
+                {mode === "signup" && "Create Account ✨"}
+                {mode === "reset" && "Reset Password 🔒"}
               </h3>
-              <p className="text-xs text-stone-500">Realtime database synchronized</p>
+              <p className="text-xs text-stone-500">
+                Realtime database synchronized
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-stone-100 text-stone-400">
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-stone-100 text-stone-400"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -226,25 +319,40 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         {/* Tab Selection */}
         <div className="flex bg-stone-100 p-1 rounded-2xl text-xs font-semibold">
           <button
-            onClick={() => { setMode('signin'); clearMessages(); }}
+            onClick={() => {
+              setMode("signin");
+              clearMessages();
+            }}
             className={`flex-1 py-2 rounded-xl transition-all ${
-              mode === 'signin' ? 'bg-white text-rose-700 shadow-xs' : 'text-stone-600 hover:text-stone-900'
+              mode === "signin"
+                ? "bg-white text-rose-700 shadow-xs"
+                : "text-stone-600 hover:text-stone-900"
             }`}
           >
             Sign In
           </button>
           <button
-            onClick={() => { setMode('signup'); clearMessages(); }}
+            onClick={() => {
+              setMode("signup");
+              clearMessages();
+            }}
             className={`flex-1 py-2 rounded-xl transition-all ${
-              mode === 'signup' ? 'bg-white text-rose-700 shadow-xs' : 'text-stone-600 hover:text-stone-900'
+              mode === "signup"
+                ? "bg-white text-rose-700 shadow-xs"
+                : "text-stone-600 hover:text-stone-900"
             }`}
           >
             Sign Up
           </button>
           <button
-            onClick={() => { setMode('reset'); clearMessages(); }}
+            onClick={() => {
+              setMode("reset");
+              clearMessages();
+            }}
             className={`flex-1 py-2 rounded-xl transition-all ${
-              mode === 'reset' ? 'bg-white text-rose-700 shadow-xs' : 'text-stone-600 hover:text-stone-900'
+              mode === "reset"
+                ? "bg-white text-rose-700 shadow-xs"
+                : "text-stone-600 hover:text-stone-900"
             }`}
           >
             Reset
@@ -267,7 +375,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         )}
 
         {/* Partner Selection (for Sign in & Sign up) */}
-        {mode !== 'reset' && (
+        {mode !== "reset" && (
           <div>
             <label className="block text-xs font-semibold uppercase text-stone-600 mb-2">
               Select Couple Persona
@@ -275,11 +383,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setSelectedPartner('partner1')}
+                onClick={() => setSelectedPartner("partner1")}
                 className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition-all ${
-                  selectedPartner === 'partner1'
-                    ? 'bg-rose-50 border-rose-400 text-rose-900 shadow-xs'
-                    : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'
+                  selectedPartner === "partner1"
+                    ? "bg-rose-50 border-rose-400 text-rose-900 shadow-xs"
+                    : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
                 }`}
               >
                 <img
@@ -287,16 +395,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   alt={profile.partner1Name}
                   className="w-11 h-11 rounded-full object-cover border-2 border-rose-300"
                 />
-                <span className="text-xs font-semibold">{profile.partner1Name.split(' ')[0]}</span>
+                <span className="text-xs font-semibold">
+                  {profile.partner1Name.split(" ")[0]}
+                </span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setSelectedPartner('partner2')}
+                onClick={() => setSelectedPartner("partner2")}
                 className={`p-3 rounded-2xl border flex flex-col items-center gap-1.5 transition-all ${
-                  selectedPartner === 'partner2'
-                    ? 'bg-rose-50 border-rose-400 text-rose-900 shadow-xs'
-                    : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300'
+                  selectedPartner === "partner2"
+                    ? "bg-rose-50 border-rose-400 text-rose-900 shadow-xs"
+                    : "bg-white border-stone-200 text-stone-600 hover:border-stone-300"
                 }`}
               >
                 <img
@@ -304,14 +414,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   alt={profile.partner2Name}
                   className="w-11 h-11 rounded-full object-cover border-2 border-rose-300"
                 />
-                <span className="text-xs font-semibold">{profile.partner2Name.split(' ')[0]}</span>
+                <span className="text-xs font-semibold">
+                  {profile.partner2Name.split(" ")[0]}
+                </span>
               </button>
             </div>
           </div>
         )}
 
         {/* Gmail Google Authentication Button */}
-        {mode !== 'reset' && (
+        {mode !== "reset" && (
           <button
             type="button"
             onClick={handleGoogleSignIn}
@@ -340,15 +452,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </button>
         )}
 
-        {mode !== 'reset' && (
+        {mode !== "reset" && (
           <div className="relative flex items-center justify-center">
             <div className="border-t border-stone-200 w-full"></div>
-            <span className="bg-white px-3 text-[10px] text-stone-400 uppercase font-semibold">Or with Email</span>
+            <span className="bg-white px-3 text-[10px] text-stone-400 uppercase font-semibold">
+              Or with Email
+            </span>
           </div>
         )}
 
         {/* SIGN IN FORM */}
-        {mode === 'signin' && (
+        {mode === "signin" && (
           <form onSubmit={handleSignIn} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold uppercase text-stone-600 mb-1">
@@ -374,7 +488,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 </label>
                 <button
                   type="button"
-                  onClick={() => setMode('reset')}
+                  onClick={() => setMode("reset")}
                   className="text-[11px] text-rose-600 hover:underline font-medium"
                 >
                   Forgot Password?
@@ -398,14 +512,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               disabled={loading}
               className="w-full py-3.5 rounded-full bg-rose-700 hover:bg-rose-800 text-white text-xs font-semibold tracking-wide shadow-sm transition-all flex items-center justify-center gap-2 uppercase disabled:opacity-50"
             >
-              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+              {loading ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <ArrowRight className="w-4 h-4" />
+              )}
               <span>Sign In to Couple Space ❤️</span>
             </button>
           </form>
         )}
 
         {/* SIGN UP FORM */}
-        {mode === 'signup' && (
+        {mode === "signup" && (
           <form onSubmit={handleSignUp} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold uppercase text-stone-600 mb-1">
@@ -463,17 +581,22 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               disabled={loading}
               className="w-full py-3.5 rounded-full bg-rose-700 hover:bg-rose-800 text-white text-xs font-semibold tracking-wide shadow-sm transition-all flex items-center justify-center gap-2 uppercase disabled:opacity-50"
             >
-              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+              {loading ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <ArrowRight className="w-4 h-4" />
+              )}
               <span>Create Account & Sync Live ✨</span>
             </button>
           </form>
         )}
 
         {/* RESET PASSWORD FORM */}
-        {mode === 'reset' && (
+        {mode === "reset" && (
           <form onSubmit={handleResetPassword} className="space-y-4">
             <p className="text-xs text-stone-600">
-              Enter your registered Gmail or email address below and we will send you a password reset link.
+              Enter your registered Gmail or email address below and we will
+              send you a password reset link.
             </p>
             <div>
               <label className="block text-xs font-semibold uppercase text-stone-600 mb-1">
@@ -497,7 +620,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               disabled={loading}
               className="w-full py-3.5 rounded-full bg-rose-700 hover:bg-rose-800 text-white text-xs font-semibold tracking-wide shadow-sm transition-all flex items-center justify-center gap-2 uppercase disabled:opacity-50"
             >
-              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+              {loading ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Mail className="w-4 h-4" />
+              )}
               <span>Send Reset Password Email 📧</span>
             </button>
           </form>
