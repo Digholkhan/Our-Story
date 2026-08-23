@@ -5,7 +5,7 @@ import {
   subscribeToPresence,
   subscribeToRealtimeNode,
   uploadCoupleFile,
-} from "./lib/firebase";
+} from "./lib/supabase";
 import { StoryStorage } from "./lib/storage";
 import {
   Album,
@@ -114,10 +114,10 @@ function App() {
   const [showWriteLetterModal, setShowWriteLetterModal] = useState(false);
   const [showReplaySlideshow, setShowReplaySlideshow] = useState(false);
 
-  // =================== FIREBASE REALTIME SUBSCRIPTIONS ===================
+  // =================== CLOUD REALTIME SUBSCRIPTIONS ===================
   useEffect(() => {
     if (!authUser?.emailVerified || !authUser.coupleId) return;
-    // Couple-scoped realtime listeners start after Firebase Auth resolves.
+    // Couple-scoped realtime listeners start after auth resolves.
     const unsubProfile = subscribeToRealtimeNode<CoupleProfile>(
       "profile",
       (val) => {

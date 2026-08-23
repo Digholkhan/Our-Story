@@ -14,14 +14,14 @@ import {
 import React, { useState } from "react";
 import {
   AuthUserInfo,
-  logoutFirebaseUser,
+  logoutSupabaseUser,
   refreshAuthUser,
   resendVerificationEmail,
   resetPasswordEmail,
   signInWithEmail,
   signInWithGoogle,
   signUpWithEmail,
-} from "../../lib/firebase";
+} from "../../lib/supabase";
 import { CoupleProfile, SessionState } from "../../types";
 
 interface LoginModalProps {
@@ -107,11 +107,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setLoading(true);
     try {
       const user = await signInWithGoogle(selectedPartner);
-      onLogin(user.activePartner, user.email || undefined);
-      setSuccessMessage("Signed in with Gmail successfully!");
-      setTimeout(() => {
-        onClose();
-      }, 500);
+      if (user) {
+        onLogin(user.activePartner, user.email || undefined);
+        setSuccessMessage("Signed in with Gmail successfully!");
+        setTimeout(() => {
+          onClose();
+        }, 500);
+      } else {
+        setSuccessMessage("Redirecting to Google sign-in...");
+      }
     } catch (err: any) {
       setError(err.message || "Gmail Authentication failed.");
     } finally {
@@ -137,9 +141,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   const handleLogoutClick = async () => {
     try {
-      await logoutFirebaseUser();
+      await logoutSupabaseUser();
     } catch (err) {
-      console.warn("Firebase logout error:", err);
+      console.warn("Logout error:", err);
     }
     onLogout();
     onClose();
@@ -149,7 +153,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     clearMessages();
     setLoading(true);
     try {
-      await logoutFirebaseUser();
+      await logoutSupabaseUser();
       onLogout();
       setMode("signin");
       setSuccessMessage("Signed out. Sign in with the other partner's account.");
@@ -233,7 +237,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 📧 {currentEmail}
               </p>
               <span className="inline-block mt-2 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-xs text-emerald-700 font-medium">
-                ● Live Firebase Connected
+                ● Live Supabase Connected
               </span>
               {authUser &&
                 authUser.provider === "password" &&

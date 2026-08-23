@@ -38,7 +38,7 @@ import {
 import {
   saveToRealtimeNode,
   seedRealtimeDBIfEmpty
-} from './firebase';
+} from './supabase';
 
 const KEYS = {
   PROFILE: 'our_story_profile_v2',
@@ -92,8 +92,8 @@ export class StoryStorage {
     setStored(KEYS.SESSION, session);
   }
 
-  // Seed Firebase Realtime Database on startup if empty
-  static async seedFirebaseIfEmpty(): Promise<void> {
+  // Seed remote data store on startup if empty
+  static async seedCloudIfEmpty(): Promise<void> {
     const seedMap = {
       profile: this.getProfile(),
       albums: this.getAlbums(),
