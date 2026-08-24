@@ -4,7 +4,9 @@ import {
   subscribeToAuth,
   subscribeToPresence,
   subscribeToRealtimeNode,
+  saveToRealtimeNode,
   uploadCoupleFile,
+  getCurrentCoupleId,
 } from "./lib/supabase";
 import { StoryStorage } from "./lib/storage";
 import {
@@ -105,6 +107,12 @@ function App() {
   );
   const [authUser, setAuthUser] = useState<AuthUserInfo | null>(null);
 
+  // Interaction counts (public, synced for all visitors)
+  const [loveCount, setLoveCount] = useState(1248);
+  const [toastCount, setToastCount] = useState(384);
+  const [hasSentLove, setHasSentLove] = useState(false);
+  const [hasToasted, setHasToasted] = useState(false);
+
   // UI State
   const [activeTab, setActiveTab] = useState<string>("landing");
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -114,7 +122,54 @@ function App() {
   const [showWriteLetterModal, setShowWriteLetterModal] = useState(false);
   const [showReplaySlideshow, setShowReplaySlideshow] = useState(false);
 
-  // =================== CLOUD REALTIME SUBSCRIPTIONS ===================
+  // =================== PUBLIC REALTIME SUBSCRIPTIONS (no login required) ===================
+  useEffect(() => {
+    // Subscribe to public nodes — loaded for ALL visitors (no auth required)
+    const unsubPublicProfile = subscribeToRealtimeNode<typeof profile>(
+      "profile",
+      (val) => { if (val) setProfile(val); },
+    );
+    const unsubPublicMemories = subscribeToRealtimeNode<Memory[]>(
+      "memories",
+      (val) => {
+        if (!val) return;
+        const publicMemories = val.filter((memory) => memory.visibility === "PUBLIC");
+        StoryStorage.setMemories(publicMemories);
+        setMemories(publicMemories);
+      },
+    );
+    const unsubPublicTimeline = subscribeToRealtimeNode<TimelineEvent[]>(
+      "timeline",
+      (val) => {
+        if (!val) return;
+        const publicTimeline = val.filter((event) => event.visibility === "PUBLIC");
+        StoryStorage.setTimeline(publicTimeline);
+        setTimeline(publicTimeline);
+      },
+    );
+    const unsubPublicMessages = subscribeToRealtimeNode<GuestMessage[]>(
+      "guestMessages",
+      (val) => { if (val) setGuestMessages(val); },
+    );
+    const unsubInteractions = subscribeToRealtimeNode<{ loveCount: number; toastCount: number }>(
+      "interaction_counts",
+      (val) => {
+        if (val) {
+          setLoveCount(val.loveCount);
+          setToastCount(val.toastCount);
+        }
+      },
+    );
+    return () => {
+      unsubPublicProfile();
+      unsubPublicMemories();
+      unsubPublicTimeline();
+      unsubPublicMessages();
+      unsubInteractions();
+    };
+  }, [authUser]);
+
+  // =================== CLOUD REALTIME SUBSCRIPTIONS (authenticated) ===================
   useEffect(() => {
     if (!authUser?.emailVerified || !authUser.coupleId) return;
     // Couple-scoped realtime listeners start after auth resolves.
@@ -132,14 +187,20 @@ function App() {
     const unsubMemories = subscribeToRealtimeNode<Memory[]>(
       "memories",
       (val) => {
-        if (val) setMemories(val);
+        if (val) {
+          StoryStorage.setMemories(val);
+          setMemories(val);
+        }
       },
     );
 
     const unsubTimeline = subscribeToRealtimeNode<TimelineEvent[]>(
       "timeline",
       (val) => {
-        if (val) setTimeline(val);
+        if (val) {
+          StoryStorage.setTimeline(val);
+          setTimeline(val);
+        }
       },
     );
 
@@ -267,6 +328,39 @@ function App() {
 
   // =================== HANDLERS ===================
 
+  // Interaction — public, no login needed
+  const handleSendLove = useCallback(async () => {
+    const newCount = loveCount + 1;
+    setLoveCount(newCount);
+    setHasSentLove(true);
+    try {
+      const coupleId = getCurrentCoupleId();
+      if (coupleId) {
+        await saveToRealtimeNode(
+          "interaction_counts",
+          { loveCount: newCount, toastCount },
+          true, // bypassAuth
+        );
+      }
+    } catch {/* silent — local count is already updated */}
+  }, [loveCount, toastCount]);
+
+  const handleRaiseToast = useCallback(async () => {
+    const newCount = toastCount + 1;
+    setToastCount(newCount);
+    setHasToasted(true);
+    try {
+      const coupleId = getCurrentCoupleId();
+      if (coupleId) {
+        await saveToRealtimeNode(
+          "interaction_counts",
+          { loveCount, toastCount: newCount },
+          true, // bypassAuth
+        );
+      }
+    } catch {/* silent */}
+  }, [loveCount, toastCount]);
+
   // Auth
   const handleLogin = useCallback(
     (partner: "partner1" | "partner2", _email?: string) => {
@@ -309,8 +403,12 @@ function App() {
               ...(await uploadCoupleFile(`memories/${mem.id}`, imageFile)),
             }
           : mem;
-        await StoryStorage.saveMemory(savedMemory);
-        setMemories(StoryStorage.getMemories());
+        const nextMemories = [
+          savedMemory,
+          ...memories.filter((memory) => memory.id !== savedMemory.id),
+        ];
+        await StoryStorage.saveMemories(nextMemories);
+        setMemories(nextMemories);
       } catch (error) {
         console.error("Unable to save memory:", error);
         alert(
@@ -318,7 +416,7 @@ function App() {
         );
       }
     },
-    [],
+    [memories],
   );
 
   const handleDeleteMemory = useCallback((id: string) => {
@@ -359,10 +457,14 @@ function App() {
   }, []);
 
   // Timeline
-  const handleSaveTimelineEvent = useCallback((evt: TimelineEvent) => {
-    StoryStorage.saveTimelineEvent(evt);
-    setTimeline(StoryStorage.getTimeline());
-  }, []);
+  const handleSaveTimelineEvent = useCallback(async (evt: TimelineEvent) => {
+    const nextTimeline = [
+      ...timeline.filter((event) => event.id !== evt.id),
+      evt,
+    ];
+    await StoryStorage.saveTimeline(nextTimeline);
+    setTimeline(nextTimeline);
+  }, [timeline]);
 
   const handleDeleteTimelineEvent = useCallback((id: string) => {
     StoryStorage.deleteTimelineEvent(id);
@@ -540,10 +642,8 @@ function App() {
     setChatMessages(StoryStorage.getChatMessages());
   }, []);
 
-  // Wedding memories filter for slideshow
-  const weddingMemories = memories.filter(
-    (m) => m.albumId === "alb-wedding-day" || m.tags.includes("Wedding"),
-  );
+  // Keep the replay in sync with every memory, including newly uploaded ones.
+  const weddingMemories = memories;
 
   // Render view router
   const renderActiveView = () => {
@@ -555,10 +655,16 @@ function App() {
             timeline={timeline}
             memories={memories}
             guestMessages={guestMessages}
+            loveCount={loveCount}
+            toastCount={toastCount}
+            hasSentLove={hasSentLove}
+            hasToasted={hasToasted}
             onEnterStory={() => setActiveTab("timeline")}
             onOpenReplay={() => setShowReplaySlideshow(true)}
             onSelectTab={(tab: string) => setActiveTab(tab)}
             onOpenAddMessage={() => setShowAddMessageModal(true)}
+            onSendLove={handleSendLove}
+            onRaiseToast={handleRaiseToast}
           />
         );
 
@@ -845,6 +951,32 @@ function App() {
           onClose={() => setShowReplaySlideshow(false)}
         />
       )}
+      {/* ========== FOOTER ========== */}
+      <footer className="relative z-10 border-t border-stone-200/80 bg-white/60 backdrop-blur-sm mt-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-stone-500 text-sm">
+            <span className="text-rose-500 text-base">❤️</span>
+            <span className="font-serif italic text-stone-700">Farjana &amp; Nasif — A Love Story</span>
+          </div>
+          <div className="text-center text-xs text-stone-400 font-light tracking-wide">
+            <p>Crafted with love &amp; code</p>
+            <p className="mt-0.5">
+              Developed by{" "}
+              <a
+                href="https://github.com/Digholkhan"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-stone-600 hover:text-rose-700 transition-colors"
+              >
+                Md Mohiuddin
+              </a>
+            </p>
+          </div>
+          <div className="flex items-center gap-3 text-stone-400 text-xs">
+            <span>✦ Made with ♡ ✦</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

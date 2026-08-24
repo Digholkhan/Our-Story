@@ -202,11 +202,15 @@ export const AmbientAudioPlayer: React.FC = () => {
     isPlayingRef.current = true;
 
     const ctx = ensureCtx();
-    if (!ctx) return;
+    if (!ctx || !masterGainRef.current) return;
 
-    // Small delay to let AudioContext warm up
-    schedulerTimerRef.current = window.setTimeout(runScheduler, 50);
-  }, [stopScheduler, ensureCtx, runScheduler]);
+    // Play first chord immediately (required to unlock Web Audio on iOS/Android)
+    scheduleChord(ctx, masterGainRef.current, TRACKS[idx], 0);
+    stepRef.current = 1;
+
+    // Continue scheduling subsequent chords
+    schedulerTimerRef.current = window.setTimeout(runScheduler, TRACKS[idx].stepMs);
+  }, [stopScheduler, ensureCtx, scheduleChord, runScheduler]);
 
   // ── Toggle play/pause ─────────────────────────────────────────────────────
   const togglePlay = useCallback(() => {
@@ -250,12 +254,12 @@ export const AmbientAudioPlayer: React.FC = () => {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="fixed bottom-6 right-6 z-40 flex items-end gap-2">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end gap-2">
 
-      {/* ── Expanded Control Panel ───────────────────────────────────────── */}
+      {/* ── Expanded Control Panel ─────────────────────────────────────── */}
       {showPanel && (
         <div
-          className="w-72 bg-white rounded-3xl border border-stone-200 shadow-2xl p-5 space-y-4 text-stone-800 animate-scaleIn mb-1"
+          className="w-[calc(100vw-2rem)] max-w-[288px] bg-white rounded-3xl border border-stone-200 shadow-2xl p-5 space-y-4 text-stone-800 animate-scaleIn"
           style={{ transformOrigin: 'bottom right' }}
         >
           {/* Header */}
@@ -353,54 +357,57 @@ export const AmbientAudioPlayer: React.FC = () => {
         </div>
       )}
 
-      {/* ── Floating Pill Button ─────────────────────────────────────────── */}
-      <button
-        type="button"
-        onClick={() => {
-          if (!isPlaying && !showPanel) {
-            // First tap: start music + show panel
-            startTrack(trackIdxRef.current);
-            setIsPlaying(true);
-            setShowPanel(true);
-          } else {
-            setShowPanel((prev) => !prev);
-          }
-        }}
-        className={`flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg border transition-all duration-300 ${
-          isPlaying
-            ? 'bg-rose-50 border-rose-300 text-rose-900'
-            : 'bg-white border-stone-300 text-stone-700 hover:border-stone-400'
-        }`}
-        title="Romantic Ambient Music"
-      >
-        {isPlaying ? (
-          <>
-            <span className="flex items-center gap-0.5 h-4">
-              <span className="w-1 h-2.5 bg-rose-600 rounded-full animate-pulse" />
-              <span className="w-1 h-4 bg-rose-700 rounded-full animate-bounce" />
-              <span className="w-1 h-2 bg-rose-500 rounded-full animate-pulse" />
-            </span>
-            <span className="text-xs font-semibold">Music On ♫</span>
-          </>
-        ) : (
-          <>
-            <Volume2 className="w-4 h-4 text-stone-500" />
-            <span className="text-xs font-semibold">Play Music ♫</span>
-          </>
-        )}
-      </button>
-
-      {/* Quick stop button when playing */}
-      {isPlaying && (
+      {/* ── Floating Pill Button ──────────────────────────────────────── */}
+      <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={togglePlay}
-          className="p-2.5 rounded-full bg-white border border-stone-200 shadow text-stone-600 hover:text-rose-700 transition-colors"
-          title="Pause Music"
+          onClick={() => {
+            if (!isPlaying && !showPanel) {
+              // First tap: start music + show panel
+              startTrack(trackIdxRef.current);
+              setIsPlaying(true);
+              setShowPanel(true);
+            } else {
+              setShowPanel((prev) => !prev);
+            }
+          }}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg border transition-all duration-300 ${
+            isPlaying
+              ? 'bg-rose-50 border-rose-300 text-rose-900'
+              : 'bg-white border-stone-300 text-stone-700 hover:border-stone-400'
+          }`}
+          title="Romantic Ambient Music"
         >
-          <Pause className="w-3.5 h-3.5" />
+          {isPlaying ? (
+            <>
+              <span className="flex items-center gap-0.5 h-4">
+                <span className="w-1 h-2.5 bg-rose-600 rounded-full animate-pulse" />
+                <span className="w-1 h-4 bg-rose-700 rounded-full animate-bounce" />
+                <span className="w-1 h-2 bg-rose-500 rounded-full animate-pulse" />
+              </span>
+              <span className="text-xs font-semibold">Music On ♫</span>
+            </>
+          ) : (
+            <>
+              <Volume2 className="w-4 h-4 text-stone-500" />
+              <span className="text-xs font-semibold hidden sm:inline">Play Music ♫</span>
+              <span className="text-xs font-semibold sm:hidden">♫</span>
+            </>
+          )}
         </button>
-      )}
+
+        {/* Quick stop when playing */}
+        {isPlaying && (
+          <button
+            type="button"
+            onClick={togglePlay}
+            className="p-2.5 rounded-full bg-white border border-stone-200 shadow text-stone-600 hover:text-rose-700 transition-colors"
+            title="Pause Music"
+          >
+            <Pause className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 };

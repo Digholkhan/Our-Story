@@ -35,6 +35,8 @@ const PARTNER_ASSIGNMENT_KEY = "our_story_user_partner_role";
 
 type PartnerRole = "partner1" | "partner2";
 
+let realtimeSubscriptionId = 0;
+
 export interface AuthUserInfo {
   uid: string;
   email: string | null;
@@ -190,7 +192,7 @@ export async function signUpWithEmail(
     email,
     password: pass,
     options: {
-      data: { full_name: name },
+      data: { full_name: name, partner_role: partnerRole },
       emailRedirectTo: window.location.origin,
     },
   });
@@ -207,9 +209,11 @@ export async function signUpWithEmail(
 export async function signInWithEmail(
   email: string,
   pass: string,
-  partnerRole?: PartnerRole,
+  partnerRole: PartnerRole,
 ): Promise<AuthUserInfo> {
   const client = requireSupabase();
+  // Set this before signInWithPassword triggers onAuthStateChange.
+  setStoredPartnerAssignment(partnerRole, email);
   const { data, error } = await client.auth.signInWithPassword({
     email,
     password: pass,
@@ -217,7 +221,8 @@ export async function signInWithEmail(
   if (error) throw error;
   if (!data.user) throw new Error("Sign in failed.");
 
-  const role = partnerRole || getStoredPartnerAssignment(data.user.email);
+  const role = partnerRole;
+  await client.auth.updateUser({ data: { partner_role: role } });
   setStoredPartnerAssignment(role, data.user.email);
   await saveUserProfile(data.user, role);
   return userToAuthInfo(data.user, role);
@@ -389,7 +394,7 @@ export function subscribeToRealtimeNode<T>(
 
   const channel = supabase
     .channel(
-      `couple-nodes-${encodeURIComponent(coupleId)}-${encodeURIComponent(nodePath)}`,
+      `couple-nodes-${encodeURIComponent(coupleId)}-${encodeURIComponent(nodePath)}-${++realtimeSubscriptionId}`,
     )
     .on(
       "postgres_changes",
@@ -423,22 +428,30 @@ export function subscribeToRealtimeNode<T>(
 export async function saveToRealtimeNode<T>(
   nodePath: string,
   data: T,
+  bypassAuth: boolean = false,
 ): Promise<void> {
   const client = requireSupabase();
   const coupleId = getCurrentCoupleId();
+  if (!coupleId) {
+    throw new Error("Couple ID is not configured.");
+  }
   const { data: authData } = await client.auth.getUser();
-  if (!coupleId || !authData.user) {
+  if (!bypassAuth && !authData?.user) {
     throw new Error("Sign in to save couple data.");
   }
 
-  const { error } = await client.from("couple_nodes").upsert({
+  const payload: any = {
     couple_id: coupleId,
     node_path: nodePath,
     payload: data,
-    updated_by: authData.user.id,
     updated_at: new Date().toISOString(),
-  });
+  };
 
+  if (authData?.user) {
+    payload.updated_by = authData.user.id;
+  }
+
+  const { error } = await client.from("couple_nodes").upsert(payload);
   if (error) throw new Error(`Unable to save ${nodePath}: ${error.message}`);
 }
 

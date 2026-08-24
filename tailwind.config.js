@@ -54,7 +54,7 @@ export default {
       },
       fontFamily: {
         serif: ['Cormorant Garamond', 'Playfair Display', 'Georgia', 'serif'],
-        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+        sans: ['Outfit', 'Plus Jakarta Sans', 'Inter', 'sans-serif'],
         handwriting: ['Dancing Script', 'Great Vibes', 'cursive'],
       },
       animation: {
@@ -62,6 +62,7 @@ export default {
         'pulse-glow': 'pulseGlow 3s ease-in-out infinite',
         'sparkle': 'sparkle 2s ease-in-out infinite',
         'shimmer': 'shimmer 2.5s linear infinite',
+        'slow-zoom': 'slowZoom 20s ease-in-out infinite alternate',
       },
       keyframes: {
         float: {
@@ -79,6 +80,10 @@ export default {
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
+        },
+        slowZoom: {
+          '0%': { transform: 'scale(1)' },
+          '100%': { transform: 'scale(1.08)' },
         }
       },
       boxShadow: {

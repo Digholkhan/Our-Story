@@ -67,6 +67,14 @@ using (
   )
 );
 
+drop policy if exists couple_nodes_read_public on public.couple_nodes;
+create policy couple_nodes_read_public
+on public.couple_nodes for select
+to public
+using (
+  node_path in ('profile', 'memories', 'timeline', 'guestMessages', 'interaction_counts')
+);
+
 drop policy if exists couple_nodes_write_member on public.couple_nodes;
 create policy couple_nodes_write_member
 on public.couple_nodes for all
@@ -82,6 +90,17 @@ with check (
     select 1 from public.app_users u
     where u.id = auth.uid() and u.couple_id = couple_nodes.couple_id
   )
+);
+
+drop policy if exists couple_nodes_write_public on public.couple_nodes;
+create policy couple_nodes_write_public
+on public.couple_nodes for all
+to public
+using (
+  node_path in ('guestMessages', 'interaction_counts')
+)
+with check (
+  node_path in ('guestMessages', 'interaction_counts')
 );
 
 drop policy if exists presence_select_member on public.presence_status;

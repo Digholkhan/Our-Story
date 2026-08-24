@@ -176,6 +176,15 @@ export class StoryStorage {
     return getStored<Memory[]>(KEYS.MEMORIES, INITIAL_MEMORIES);
   }
 
+  static setMemories(memories: Memory[]): void {
+    setStored(KEYS.MEMORIES, memories);
+  }
+
+  static async saveMemories(memories: Memory[]): Promise<void> {
+    this.setMemories(memories);
+    await saveToRealtimeNode('memories', memories);
+  }
+
   static async saveMemory(memory: Memory): Promise<void> {
     const memories = this.getMemories();
     const idx = memories.findIndex((m) => m.id === memory.id);
@@ -184,8 +193,7 @@ export class StoryStorage {
     } else {
       memories.unshift(memory);
     }
-    setStored(KEYS.MEMORIES, memories);
-    await saveToRealtimeNode('memories', memories);
+    await this.saveMemories(memories);
   }
 
   static deleteMemory(memoryId: string): void {
@@ -200,6 +208,15 @@ export class StoryStorage {
     return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }
 
+  static setTimeline(events: TimelineEvent[]): void {
+    setStored(KEYS.TIMELINE, events);
+  }
+
+  static async saveTimeline(events: TimelineEvent[]): Promise<void> {
+    this.setTimeline(events);
+    await saveToRealtimeNode('timeline', events);
+  }
+
   static saveTimelineEvent(event: TimelineEvent): void {
     const events = getStored<TimelineEvent[]>(KEYS.TIMELINE, INITIAL_TIMELINE);
     const idx = events.findIndex((e) => e.id === event.id);
@@ -208,8 +225,7 @@ export class StoryStorage {
     } else {
       events.push(event);
     }
-    setStored(KEYS.TIMELINE, events);
-    saveToRealtimeNode('timeline', events);
+    void this.saveTimeline(events);
   }
 
   static deleteTimelineEvent(id: string): void {

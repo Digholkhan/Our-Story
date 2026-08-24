@@ -40,7 +40,7 @@ export const ReplaySlideshowModal: React.FC<ReplaySlideshowModalProps> = ({
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold transition-all backdrop-blur-md"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>← Back to Website</span>
+            <span>Back to Website</span>
           </button>
 
           <div className="hidden sm:block pl-2">
