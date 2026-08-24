@@ -4,7 +4,7 @@ import { GuestMessage } from '../../types';
 
 interface AddGuestMessageModalProps {
   onClose: () => void;
-  onSubmitMessage: (msg: GuestMessage) => void;
+  onSubmitMessage: (msg: GuestMessage) => Promise<void>;
 }
 
 export const AddGuestMessageModal: React.FC<AddGuestMessageModalProps> = ({
@@ -29,8 +29,7 @@ export const AddGuestMessageModal: React.FC<AddGuestMessageModalProps> = ({
       isPinned: false
     };
 
-    onSubmitMessage(newMsg);
-    onClose();
+    void onSubmitMessage(newMsg).then(onClose);
   };
 
   return (

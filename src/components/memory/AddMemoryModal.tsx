@@ -14,7 +14,7 @@ import { Album, Memory, VisibilityLevel } from "../../types";
 interface AddMemoryModalProps {
   albums: Album[];
   onClose: () => void;
-  onSaveMemory: (memory: Memory, imageFile?: File) => void;
+  onSaveMemory: (memory: Memory, imageFile?: File) => Promise<void>;
   onCreateAlbum: (name: string) => Album;
   activePartner: string;
 }
@@ -87,8 +87,7 @@ export const AddMemoryModal: React.FC<AddMemoryModalProps> = ({
       createdAt: new Date().toISOString(),
     };
 
-    onSaveMemory(newMem, imageFile);
-    onClose();
+    void onSaveMemory(newMem, imageFile).then(onClose);
   };
 
   return (

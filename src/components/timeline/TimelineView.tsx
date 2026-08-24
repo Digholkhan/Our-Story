@@ -5,7 +5,7 @@ import { TimelineEvent, SessionState, VisibilityLevel } from '../../types';
 interface TimelineViewProps {
   timeline: TimelineEvent[];
   session: SessionState;
-  onSaveEvent: (event: TimelineEvent) => void;
+  onSaveEvent: (event: TimelineEvent) => Promise<void>;
   onDeleteEvent: (id: string) => void;
 }
 
@@ -75,8 +75,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       visibility
     };
 
-    onSaveEvent(newEvt);
-    setIsModalOpen(false);
+    void onSaveEvent(newEvt).then(() => setIsModalOpen(false));
   };
 
   return (

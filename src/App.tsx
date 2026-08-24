@@ -124,6 +124,8 @@ function App() {
 
   // =================== PUBLIC REALTIME SUBSCRIPTIONS (no login required) ===================
   useEffect(() => {
+    if (authUser?.emailVerified && authUser.coupleId) return;
+
     // Subscribe to public nodes — loaded for ALL visitors (no auth required)
     const unsubPublicProfile = subscribeToRealtimeNode<typeof profile>(
       "profile",
@@ -149,7 +151,12 @@ function App() {
     );
     const unsubPublicMessages = subscribeToRealtimeNode<GuestMessage[]>(
       "guestMessages",
-      (val) => { if (val) setGuestMessages(val); },
+      (val) => {
+        if (val) {
+          StoryStorage.setGuestMessages(val);
+          setGuestMessages(val);
+        }
+      },
     );
     const unsubInteractions = subscribeToRealtimeNode<{ loveCount: number; toastCount: number }>(
       "interaction_counts",
@@ -414,6 +421,7 @@ function App() {
         alert(
           error instanceof Error ? error.message : "Unable to save memory.",
         );
+        throw error;
       }
     },
     [memories],
@@ -458,12 +466,22 @@ function App() {
 
   // Timeline
   const handleSaveTimelineEvent = useCallback(async (evt: TimelineEvent) => {
-    const nextTimeline = [
-      ...timeline.filter((event) => event.id !== evt.id),
-      evt,
-    ];
-    await StoryStorage.saveTimeline(nextTimeline);
-    setTimeline(nextTimeline);
+    try {
+      const nextTimeline = [
+        ...timeline.filter((event) => event.id !== evt.id),
+        evt,
+      ];
+      await StoryStorage.saveTimeline(nextTimeline);
+      setTimeline(nextTimeline);
+    } catch (error) {
+      console.error("Unable to save timeline event:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to save timeline event.",
+      );
+      throw error;
+    }
   }, [timeline]);
 
   const handleDeleteTimelineEvent = useCallback((id: string) => {
@@ -588,10 +606,14 @@ function App() {
   }, []);
 
   // Guest Messages
-  const handleSaveGuestMessage = useCallback((msg: GuestMessage) => {
-    StoryStorage.saveGuestMessage(msg);
-    setGuestMessages(StoryStorage.getGuestMessages());
-  }, []);
+  const handleSaveGuestMessage = useCallback(async (msg: GuestMessage) => {
+    const nextMessages = [
+      msg,
+      ...guestMessages.filter((message) => message.id !== msg.id),
+    ];
+    await StoryStorage.saveGuestMessages(nextMessages);
+    setGuestMessages(nextMessages);
+  }, [guestMessages]);
 
   const handleDeleteGuestMessage = useCallback((id: string) => {
     StoryStorage.deleteGuestMessage(id);

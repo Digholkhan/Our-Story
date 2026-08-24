@@ -436,7 +436,16 @@ export class StoryStorage {
     return getStored<GuestMessage[]>(KEYS.GUEST_MESSAGES, INITIAL_GUEST_MESSAGES);
   }
 
-  static saveGuestMessage(msg: GuestMessage): void {
+  static setGuestMessages(messages: GuestMessage[]): void {
+    setStored(KEYS.GUEST_MESSAGES, messages);
+  }
+
+  static async saveGuestMessages(messages: GuestMessage[]): Promise<void> {
+    this.setGuestMessages(messages);
+    await saveToRealtimeNode('guestMessages', messages, true);
+  }
+
+  static async saveGuestMessage(msg: GuestMessage): Promise<void> {
     const messages = this.getGuestMessages();
     const idx = messages.findIndex((m) => m.id === msg.id);
     if (idx >= 0) {
@@ -444,8 +453,7 @@ export class StoryStorage {
     } else {
       messages.unshift(msg);
     }
-    setStored(KEYS.GUEST_MESSAGES, messages);
-    saveToRealtimeNode('guestMessages', messages);
+    await this.saveGuestMessages(messages);
   }
 
   static deleteGuestMessage(id: string): void {

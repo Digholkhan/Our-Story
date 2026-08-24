@@ -142,7 +142,9 @@ async function saveUserProfile(user: User, role: UserRole): Promise<void> {
     updated_at: new Date().toISOString(),
   };
 
-  const { error } = await client.from("app_users").upsert(payload);
+  const { error } = await client
+    .from("app_users")
+    .upsert(payload, { onConflict: "id" });
   if (error) {
     throw new Error(`Unable to save user profile: ${error.message}`);
   }
@@ -388,8 +390,11 @@ export function subscribeToRealtimeNode<T>(
   }
 
   const coupleId = getCurrentCoupleId()!;
+  let isActive = true;
   void readNode<T>(nodePath)
-    .then((data) => onData(data))
+    .then((data) => {
+      if (isActive) onData(data);
+    })
     .catch((err) => console.error(`Failed reading node ${nodePath}:`, err));
 
   const channel = supabase
@@ -405,6 +410,7 @@ export function subscribeToRealtimeNode<T>(
         filter: `couple_id=eq.${coupleId}`,
       },
       (payload) => {
+        if (!isActive) return;
         const next = payload.new as NodeRecord | undefined;
         const prev = payload.old as NodeRecord | undefined;
 
@@ -421,6 +427,7 @@ export function subscribeToRealtimeNode<T>(
     .subscribe();
 
   return () => {
+    isActive = false;
     void supabase.removeChannel(channel);
   };
 }
@@ -439,6 +446,12 @@ export async function saveToRealtimeNode<T>(
   if (!bypassAuth && !authData?.user) {
     throw new Error("Sign in to save couple data.");
   }
+  if (authData?.user && !bypassAuth) {
+    const metadataRole = authData.user.user_metadata?.partner_role;
+    const role: UserRole =
+      metadataRole === "partner2" ? "partner2" : getStoredPartnerAssignment(authData.user.email);
+    await saveUserProfile(authData.user, role);
+  }
 
   const payload: any = {
     couple_id: coupleId,
@@ -451,8 +464,23 @@ export async function saveToRealtimeNode<T>(
     payload.updated_by = authData.user.id;
   }
 
-  const { error } = await client.from("couple_nodes").upsert(payload);
+  const { error } = await client
+    .from("couple_nodes")
+    .upsert(payload, { onConflict: "couple_id,node_path" });
   if (error) throw new Error(`Unable to save ${nodePath}: ${error.message}`);
+
+  const { data: savedNode, error: verifyError } = await client
+    .from("couple_nodes")
+    .select("payload")
+    .eq("couple_id", coupleId)
+    .eq("node_path", nodePath)
+    .maybeSingle();
+  if (verifyError) {
+    throw new Error(`Unable to verify ${nodePath}: ${verifyError.message}`);
+  }
+  if (!savedNode) {
+    throw new Error(`Unable to verify ${nodePath}: Supabase did not return the saved data.`);
+  }
 }
 
 export async function deleteRealtimeNode(nodePath: string): Promise<void> {

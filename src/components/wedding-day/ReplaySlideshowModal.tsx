@@ -27,7 +27,7 @@ export const ReplaySlideshowModal: React.FC<ReplaySlideshowModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex flex-col justify-between p-4 sm:p-8 animate-fadeIn select-none"
+      className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col justify-between p-4 pt-24 sm:p-8 sm:pt-24 animate-fadeIn select-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

@@ -44,7 +44,7 @@ export const Lightbox: React.FC<LightboxProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex flex-col justify-between p-4 sm:p-6 animate-fadeIn"
+      className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col justify-between p-4 pt-24 sm:p-6 sm:pt-24 animate-fadeIn"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -60,7 +60,7 @@ export const Lightbox: React.FC<LightboxProps> = ({
           title="Back to Memories Gallery"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>← Back to Gallery</span>
+          <span>Back to Gallery</span>
         </button>
 
         {/* Center count & badge */}
